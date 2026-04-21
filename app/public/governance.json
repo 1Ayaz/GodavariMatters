@@ -1,0 +1,177 @@
+{
+  "last_updated": "2026-04-21",
+  "platform_scope": "Garbage & waste pollution reporting — streets, rivers, water bodies, open dumping",
+  
+  "parliamentary_constituency": {
+    "name": "Rajahmundry Lok Sabha Constituency",
+    "mp": "Daggubati Purandheshwari",
+    "party": "BJP"
+  },
+
+  "urban": {
+    "mla": {
+      "name": "Adireddy Srinivas",
+      "party": "TDP",
+      "constituency": "Rajahmundry City (#62)"
+    },
+    "corporation": {
+      "name": "Rajamahendravaram Municipal Corporation (RMC)",
+      "commissioner": "Rahul Meena (subject to transfers)",
+      "mayor": "Vacant",
+      "helpline": "9494-060-060"
+    },
+    "responsible_official": {
+      "role": "Ward Sanitation & Environment Secretary",
+      "short": "WSanES",
+      "department": "Municipal Administration",
+      "responsibilities": [
+        "Garbage collection & door-to-door waste pickup",
+        "Street sweeping & public area cleanliness",
+        "Drain & nala cleaning",
+        "Open dumping & unauthorized waste disposal",
+        "Vector control (mosquitoes from stagnant waste)",
+        "Dry/wet waste segregation enforcement"
+      ],
+      "note": "This is THE person responsible for garbage in each urban sachivalayam. One WSanES per sachivalayam."
+    },
+    "supporting_officials": [
+      {
+        "role": "Ward Amenities Secretary",
+        "short": "WAmenS",
+        "relevance": "Manages drains & stormwater channels where garbage accumulates"
+      },
+      {
+        "role": "Ward Administrative Secretary",
+        "short": "WAS",
+        "relevance": "Team leader — escalation point if WSanES doesn't act"
+      }
+    ],
+    "complaint_channels": {
+      "primary": {
+        "channel": "RMC Helpline",
+        "number": "9494-060-060",
+        "hours": "9 AM - 6 PM",
+        "for": "Immediate garbage complaints"
+      },
+      "app": {
+        "channel": "RMC Sevak App / NagaraSeva App",
+        "for": "Photo-based reporting with GPS location & tracking"
+      },
+      "online": {
+        "channel": "PGRS Portal",
+        "url": "https://pgrs.ap.gov.in/",
+        "for": "Formal tracked complaints"
+      },
+      "escalation": {
+        "channel": "Dial Your Commissioner",
+        "schedule": "Mondays 10-11 AM",
+        "for": "When sachivalayam-level officials don't respond"
+      }
+    }
+  },
+
+  "rural": {
+    "mla": {
+      "name": "Gorantla Butchaiah Chowdary",
+      "party": "TDP",
+      "constituency": "Rajahmundry Rural (#63)"
+    },
+    "administration": {
+      "mandal": "Rajamahendravaram Rural",
+      "mpdo": "MPDO - Rajamahendravaram Rural",
+      "gram_panchayat": "Each village has an elected Sarpanch"
+    },
+    "responsible_official": {
+      "role": "Engineering Assistant",
+      "short": "EA",
+      "department": "Panchayat Raj",
+      "responsibilities": [
+        "Village sanitation & solid waste management",
+        "Drain maintenance & cleaning",
+        "Public area cleanliness",
+        "MGNREGS sanitation works"
+      ],
+      "note": "Rural areas don't have a dedicated Sanitation Secretary like urban areas. The Engineering Assistant handles sanitation + infrastructure combined."
+    },
+    "supporting_officials": [
+      {
+        "role": "Panchayat Secretary (Gr-V)",
+        "short": "PS",
+        "relevance": "Head of grama sachivalayam — escalation point for sanitation complaints"
+      },
+      {
+        "role": "Sarpanch",
+        "relevance": "Elected village head — political accountability for village cleanliness"
+      }
+    ],
+    "complaint_channels": {
+      "primary": {
+        "channel": "Meekosam / Spandana Portal",
+        "url": "https://meekosam.ap.gov.in",
+        "for": "Online grievance filing with tracking"
+      },
+      "phone": {
+        "channel": "Toll-free Helpline",
+        "number": "1902",
+        "for": "Phone-based complaint registration"
+      },
+      "in_person": {
+        "channel": "Grama Sachivalayam Visit",
+        "for": "Walk in and report to Panchayat Secretary or Engineering Assistant"
+      },
+      "escalation": {
+        "channel": "District Collectorate Grievance Day",
+        "schedule": "Mondays",
+        "for": "When village-level officials don't respond"
+      },
+      "whatsapp": {
+        "available": false,
+        "note": "No WhatsApp complaint channel exists for rural areas. This is the gap GodavariMatters fills."
+      }
+    }
+  },
+
+  "river_pollution": {
+    "note": "Garbage in the Godavari River or other water bodies crosses jurisdictions",
+    "relevant_authorities": [
+      {
+        "authority": "AP Pollution Control Board (APPCB)",
+        "role": "Environmental regulation & water body pollution",
+        "complaint_url": "https://appcb.ap.gov.in/",
+        "toll_free": "18004252738"
+      },
+      {
+        "authority": "District Collector - East Godavari",
+        "role": "Overall district administration, can direct any department to act"
+      },
+      {
+        "authority": "Municipal Commissioner (if urban stretch)",
+        "role": "RMC is responsible for urban riverbank cleanliness"
+      },
+      {
+        "authority": "MPDO (if rural stretch)",
+        "role": "Rural mandal administration for rural riverbank areas"
+      }
+    ],
+    "godavari_context": "The Godavari river flows through both urban RMC area and rural villages (Dowleswaram, Bommuru, Katheru). Garbage dumped in the river is a cross-jurisdictional issue."
+  },
+
+  "complaint_routing": {
+    "garbage_on_street": {
+      "urban": {"contact": "WSanES of that sachivalayam", "escalate": "RMC 9494-060-060"},
+      "rural": {"contact": "Engineering Assistant (EA)", "escalate": "Meekosam / 1902"}
+    },
+    "garbage_in_drain": {
+      "urban": {"contact": "WSanES + WAmenS", "escalate": "RMC Sevak App"},
+      "rural": {"contact": "Engineering Assistant (EA)", "escalate": "Panchayat Secretary"}
+    },
+    "garbage_in_river": {
+      "urban_stretch": {"contact": "RMC + APPCB", "escalate": "District Collector"},
+      "rural_stretch": {"contact": "MPDO + APPCB", "escalate": "District Collector"}
+    },
+    "open_dumping": {
+      "urban": {"contact": "WSanES", "escalate": "Ward Planning Secretary (WPRS)"},
+      "rural": {"contact": "Engineering Assistant (EA)", "escalate": "Sarpanch / MPDO"}
+    }
+  }
+}

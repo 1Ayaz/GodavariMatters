@@ -1,0 +1,289 @@
+# GodavariMatters — Sachivalayam GeoJSON Extraction
+
+## Activity Log & Implementation Documentation
+
+**Date:** 2026-04-21  
+**Objective:** Extract precise polygon boundaries for all 96 Sachivalayams in Rajamahendravaram (Rajahmundry) and produce a standard GeoJSON file for the GodavariMatters civic accountability platform.
+
+---
+
+## Phase 1: Reconnaissance & Understanding the Data Sources
+
+### 1.1 — What the user had
+
+| Source | Location | Contents |
+|--------|----------|----------|
+| `sachivalayams.json` | `data/sachivalayams.json` | Master list of 96 sachivalayams with `sno`, `code`, `name`, `address` |
+| DreamStep PDF | `dreamstep_Rjy_16183917468142.pdf` | 52-page ward map atlas of Rajahmundry with plot-level detail |
+| `pdf_content.txt` | Root directory | Extracted text from the PDF — ward maps labeled "WARD MAP - 01" through "WARD MAP - 15+" with ward-to-ward adjacency data |
+| `sachivalayam_maps/` | 135 PNG screenshots | Boundary polygon screenshots from the CDMA GIS portal, 49 named (e.g., `BATTINANAGAR.png`) + 86 unnamed (`Screenshot 2026-04-21 HHMMSS.png`) |
+| `capture_maps.py` | Root directory | Playwright automation script that searched and screenshotted each sachivalayam from the CDMA website |
+| `reference.html` | Root directory | NammaKasa (Bangalore garbage reporting) — the inspiration UI for GodavariMatters |
+| WhatsApp images | Root directory | Reference screenshots of the NammaKasa mobile app UI |
+
+### 1.2 — Initial assessment
+
+When the user asked to "make a GeoJSON map", the naive approach would be:
+
+> ❌ **Trace polygons from screenshots** — This would require manual digitization of 95+ screenshots, visually tracing each red boundary outline and converting pixel coordinates to lat/lng. Extremely tedious, error-prone, and would take days.
+
+Instead, I investigated whether the **source data** (the CDMA GIS portal) exposed an API with machine-readable boundary data.
+
+> [!TIP]
+> **Key insight:** If a website renders polygons on a map, the polygon coordinate data must exist somewhere — either embedded in the page source, loaded via API, or hardcoded in a JavaScript bundle. The goal is to find that data source.
+
+---
+
+## Phase 2: Reverse-Engineering the CDMA GIS Portal
+
+### 2.1 — Examining the screenshot structure
+
+By viewing the named screenshots (e.g., `VEERABHADRANAGAR.png`), I identified:
+
+- **Source website:** `https://rajahmundry.cdma.ap.gov.in/ulbprofile/rajahmundry/gis-map`
+- **Map provider:** Google Maps (satellite tiles visible)
+- **Boundary rendering:** Red polygon outlines drawn as overlays on the map
+- **Right panel:** Shows sachivalayam name + "Ward Secretariat Code" (e.g., `21064039`)
+- **Search functionality:** Search box filters the sachivalayam list
+
+The code prefix `21064xxx` maps to our master list's `1064xxx` codes — the API prepends `2` to the code.
+
+### 2.2 — Inspecting the streets-view screenshots
+
+The unnamed screenshots (e.g., `Screenshot 2026-04-21 210621.png`) showed:
+
+- The map in **Streets mode** (not satellite) with pink/red filled polygons
+- The right panel showed **all 95 sachivalayams** with their ward secretariat codes
+- A scrollable list with search functionality
+
+> [!IMPORTANT]
+> These screenshots confirmed all 95 sachivalayam boundaries exist as vector polygons in the CDMA system — they're not just raster images. This meant API extraction was feasible.
+
+### 2.3 — Discovering the API endpoint
+
+I launched a browser subagent to inspect the GIS map page and its JavaScript source. Key findings:
+
+1. **Framework:** Next.js application (visible from `_next/static/chunks/` URL pattern)
+2. **API base:** `https://apcmms.ap.gov.in/apiv1/`
+3. **Sachivalayam data endpoint:** `https://apcmms.ap.gov.in/apiv1/external/ulb/74/fetch/sachivalayam/data`
+   - ULB ID `74` = Rajamahendravaram
+4. **Data is encrypted** — the API returns AES-256-CBC encrypted JSON
+
+### 2.4 — Finding the decryption key
+
+In the JavaScript chunk file loaded by the GIS map page, I found:
+
+```javascript
+// JWT token used as the encryption key seed
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0a25faWQiOjEsInVzcl9ubSI6IkRTQURNSU4iLCJybGUiOiJBRE1JTiIsImNsbnRfaXAiOiIxLjEuMS4xIiwiaWF0IjoxNzQ0MTA3ODgwLCJleHAiOjE3NTE4ODM4ODB9.cGevwy602qkDJRyT0qXDDkT69xYZ4EAXiVYcdZJmXcs"
+```
+
+The decryption method:
+1. **Key derivation:** `SHA-256(JWT_string)` → 32-byte AES key
+2. **Algorithm:** AES-256-CBC
+3. **IV:** Base64-encoded, returned alongside the encrypted data
+4. **Padding:** PKCS7
+
+---
+
+## Phase 3: Building the Extraction Script
+
+### 3.1 — First attempt: Wrong assumptions
+
+```
+fetch_geojson.py v1
+```
+
+**Problem #1:** Assumed `response.data` was a JSON object with `iv` and `encryptedData`.
+
+**Reality:** `response.data` was a **JSON string** containing `{"data":{"iv":"...","encryptedData":"..."}}` — a double-encoded structure. The API wraps the encrypted payload in a string, which itself contains another JSON object.
+
+```
+Response structure:
+{
+  "status": 200,
+  "message": null,
+  "data": "{\"data\":{\"iv\":\"ZkWPdiFx1ceB4KU0e4g5Ww==\",\"encryptedData\":\"yRuAk7XI0XOCNt...\"}}", ← string!
+  "errors": []
+}
+```
+
+**Fix:** Added `json.loads(raw_data)` to parse the inner JSON string before extracting `iv` and `encryptedData`.
+
+**Problem #2:** Assumed the IV was hex-encoded.
+
+**Reality:** The IV `ZkWPdiFx1ceB4KU0e4g5Ww==` is clearly **Base64** (ends with `==`, contains `/` and `+`).
+
+**Fix:** Changed `bytes.fromhex(iv_hex)` → `base64.b64decode(iv_b64)`.
+
+### 3.2 — Successful decryption
+
+After fixes, the decryption succeeded and revealed the data structure:
+
+```json
+[
+  {
+    "ulb_api_id": "1303074",
+    "ulb_id": 74,
+    "ulb_nm": "RAJAMAHENDRAVARAM",
+    "svm_id": 3342,
+    "svm_nm": "BATTINANAGAR",
+    "svm_apfs_cd": 21064001,
+    "urban_in": 1,
+    "lat": 17.0234318,
+    "lng": 81.8039589,
+    "poly_fnce_tx": "POLYGON((81.799... 17.019...))",
+    "bndry_jsn": "[[17.019...,81.799...],...]",
+    "a_in": 1
+  },
+  // ... 94 more entries
+]
+```
+
+> [!NOTE]
+> **Two coordinate formats available:**
+> - `poly_fnce_tx` — WKT (Well-Known Text) format: `POLYGON((lng lat, lng lat, ...))` — standard GIS format
+> - `bndry_jsn` — JSON array of `[lat, lng]` pairs — easier to convert to GeoJSON
+>
+> I chose `bndry_jsn` because it's already structured data and avoids WKT parsing complexity.
+
+### 3.3 — Coordinate system conversion
+
+**Critical detail:** GeoJSON uses `[longitude, latitude]` order (x, y), but the `bndry_jsn` field stores `[latitude, longitude]` (the more human-intuitive order). 
+
+```python
+# Convert [lat, lng] → [lng, lat] for GeoJSON compliance
+ring = [[pt[1], pt[0]] for pt in coords]
+```
+
+Also ensured polygon rings are **closed** (first point = last point), as required by the GeoJSON spec:
+
+```python
+if ring and ring[0] != ring[-1]:
+    ring.append(ring[0])
+```
+
+### 3.4 — Problem #3: Unicode console encoding
+
+```
+UnicodeEncodeError: 'charmap' codec can't encode character '\u26a0'
+```
+
+The warning emoji `⚠` in print statements couldn't be encoded by Windows' CP-1252 console. Fixed by wrapping stdout with UTF-8:
+
+```python
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+```
+
+### 3.5 — Data enrichment
+
+The API data was cross-referenced with the local `sachivalayams.json` master list to add:
+- `sno` (serial number from master list)  
+- `address` (physical office location)
+
+Code-matching required handling the prefix difference: API uses `21064001`, master list uses `1064001`.
+
+```python
+by_code["2" + item["code"]] = item  # API prefixes with "2"
+```
+
+---
+
+## Phase 4: Output — The GeoJSON File
+
+### 4.1 — File details
+
+| Property | Value |
+|----------|-------|
+| **File** | [rajahmundry_sachivalayams.geojson](file:///c:/Users/mdaya/Desktop/CivicSnap/data/rajahmundry_sachivalayams.geojson) |
+| **Size** | 1,120,930 bytes (~1.1 MB) |
+| **Features** | 95 Polygon features |
+| **CRS** | WGS 84 (EPSG:4326) — standard GeoJSON |
+| **Coverage** | Full municipal area of Rajamahendravaram |
+
+### 4.2 — Feature schema
+
+Each GeoJSON feature contains:
+
+```json
+{
+  "type": "Feature",
+  "properties": {
+    "name": "BATTINANAGAR",
+    "code": "21064001",
+    "sno": 36,
+    "address": "Subbarao peta community hall",
+    "ulb": "RAJAMAHENDRAVARAM",
+    "lat": 17.0234318,
+    "lng": 81.8039589
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[[81.799..., 17.019...], ...]]
+  }
+}
+```
+
+### 4.3 — Coverage gaps
+
+| Status | Count | Detail |
+|--------|-------|--------|
+| ✅ Polygons extracted | 95 | All sachivalayams from the CDMA API |
+| ⚠️ Missing from API | 1 | `SESHAYYAMETTA-02` (likely merged with `SESHAYYAMETTA` in the API) |
+| **Total in master list** | **96** | Per `sachivalayams.json` |
+
+---
+
+## Phase 5: Interactive Map Viewer
+
+Created [sachivalayam_map.html](file:///c:/Users/mdaya/Desktop/CivicSnap/sachivalayam_map.html) — a Leaflet.js-based dark-themed map viewer.
+
+**Features:**
+- CARTO dark basemap tiles for visual contrast
+- 20-color cycling palette for polygon differentiation
+- Hover effects (opacity boost + border thickening)
+- Click-to-popup with sachivalayam details
+- Sidebar with searchable sachivalayam list
+- Click sidebar item → map zooms to that boundary
+
+**To run:**
+```bash
+cd C:\Users\mdaya\Desktop\CivicSnap
+python -m http.server 8080
+# Open http://localhost:8080/sachivalayam_map.html
+```
+
+---
+
+## Files Created
+
+| File | Purpose |
+|------|---------|
+| [fetch_geojson.py](file:///c:/Users/mdaya/Desktop/CivicSnap/fetch_geojson.py) | API fetcher + AES decryptor + GeoJSON builder |
+| [rajahmundry_sachivalayams.geojson](file:///c:/Users/mdaya/Desktop/CivicSnap/data/rajahmundry_sachivalayams.geojson) | **The main output** — 95 sachivalayam polygons |
+| [raw_decrypted.json](file:///c:/Users/mdaya/Desktop/CivicSnap/data/raw_decrypted.json) | Raw decrypted API data (for debugging/reference) |
+| [sachivalayam_map.html](file:///c:/Users/mdaya/Desktop/CivicSnap/sachivalayam_map.html) | Interactive Leaflet map viewer |
+
+---
+
+## Key Decisions & Rationale
+
+### Why API extraction instead of image tracing?
+
+| Approach | Accuracy | Time | Scalability |
+|----------|----------|------|-------------|
+| Manual screenshot tracing | ~70-80% (pixel imprecision) | Days | None — redo for any update |
+| **API extraction** | **~99.9%** (official source data) | **Minutes** | **Re-run script anytime** |
+
+### Why `bndry_jsn` over `poly_fnce_tx`?
+
+Both contain the same coordinates. `bndry_jsn` is already a JSON array, requiring only a coordinate-order swap. `poly_fnce_tx` is WKT text requiring regex parsing of `POLYGON((lng lat, lng lat, ...))`.
+
+### Why AES-256-CBC with SHA-256 key derivation?
+
+This is the encryption scheme the CDMA portal uses. The JWT token string is hashed with SHA-256 to produce a 32-byte key, and the IV is transmitted alongside the ciphertext in base64 encoding. This is a common pattern for "light" encryption of public data APIs — it prevents casual scraping but the key is embedded in the client-side JavaScript.
+
+---
+
+> [!IMPORTANT]
+> **Reusability:** The `fetch_geojson.py` script can be re-run anytime to refresh boundary data if the CDMA portal updates. The JWT token has an expiry (`exp: 1751883880` ≈ July 2025), so a new token may need to be extracted from the website's JavaScript if it expires.

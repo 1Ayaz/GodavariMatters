@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GodavariMatters — Complete Boundary Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; }
+        #header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 12px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            z-index: 1000; position: relative;
+        }
+        #header h1 {
+            font-size: 1.25rem; font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #a78bfa, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        #header .stats { font-size: 0.85rem; color: #94a3b8; }
+        #header .stats span { font-weight: 600; }
+        .urban-count { color: #818cf8 !important; }
+        .rural-count { color: #4ade80 !important; }
+        #map-container { display: flex; height: calc(100vh - 52px); }
+        #map { flex: 1; background: #1e293b; }
+        #sidebar {
+            width: 360px; background: #1e293b;
+            border-left: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        #controls { padding: 12px; border-bottom: 1px solid rgba(99, 102, 241, 0.15); }
+        #controls input {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: #0f172a; color: #e2e8f0; font-size: 0.9rem;
+            font-family: inherit; outline: none; transition: border-color 0.2s;
+        }
+        #controls input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15); }
+        #controls input::placeholder { color: #64748b; }
+        .toggle-row {
+            display: flex; gap: 8px; margin-top: 10px;
+        }
+        .toggle-btn {
+            flex: 1; padding: 8px 12px; border-radius: 8px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: #0f172a; color: #94a3b8; font-size: 0.78rem;
+            font-family: inherit; cursor: pointer; transition: all 0.2s;
+            text-align: center; font-weight: 600;
+        }
+        .toggle-btn.active { border-color: #818cf8; color: #e2e8f0; }
+        .toggle-btn.urban.active { background: rgba(99, 102, 241, 0.2); border-color: #818cf8; color: #818cf8; }
+        .toggle-btn.rural.active { background: rgba(74, 222, 128, 0.15); border-color: #4ade80; color: #4ade80; }
+        .toggle-btn.region.active { background: rgba(251, 191, 36, 0.15); border-color: #fbbf24; color: #fbbf24; }
+        #list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .sv-item {
+            padding: 10px 14px; border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+            cursor: pointer; transition: all 0.15s;
+        }
+        .sv-item:hover { background: rgba(99, 102, 241, 0.1); }
+        .sv-item.active { background: rgba(99, 102, 241, 0.2); border-left: 3px solid #818cf8; }
+        .sv-item .sv-name { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; }
+        .sv-item .sv-meta { font-size: 0.72rem; color: #64748b; margin-top: 2px; }
+        .sv-item .sv-address { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
+        .badge {
+            display: inline-block; padding: 2px 6px; border-radius: 4px;
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            margin-left: 6px; vertical-align: middle;
+        }
+        .badge-urban { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .badge-rural { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+        .badge-region { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        /* Leaflet popup styling */
+        .leaflet-popup-content-wrapper {
+            background: #1e293b !important; border: 1px solid rgba(99, 102, 241, 0.3) !important;
+            border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+        }
+        .leaflet-popup-tip { background: #1e293b !important; border: 1px solid rgba(99, 102, 241, 0.3) !important; }
+        .leaflet-popup-content { color: #e2e8f0 !important; font-family: 'Inter', sans-serif !important; margin: 12px 16px !important; }
+        .popup-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+        .popup-title.urban { color: #818cf8; }
+        .popup-title.rural { color: #4ade80; }
+        .popup-row { font-size: 0.8rem; color: #94a3b8; margin-bottom: 3px; }
+        .popup-row strong { color: #e2e8f0; }
+        .leaflet-control-zoom a { background: #1e293b !important; color: #e2e8f0 !important; border-color: rgba(99, 102, 241, 0.3) !important; }
+        .leaflet-control-zoom a:hover { background: #334155 !important; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🗺️ GodavariMatters — Complete Map</h1>
+        <div class="stats">
+            <span class="urban-count" id="urban-count">0</span> Sachivalayams ·
+            <span class="rural-count" id="rural-count">0</span> Rural Villages ·
+            Rajamahendravaram
+        </div>
+    </div>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <div id="controls">
+                <input type="text" id="search" placeholder="Search sachivalayam or village..." />
+                <div class="toggle-row">
+                    <button class="toggle-btn urban active" onclick="toggleLayer('urban')">🏙️ Urban (95)</button>
+                    <button class="toggle-btn rural active" onclick="toggleLayer('rural')">🌾 Rural (10)</button>
+                    <button class="toggle-btn region" onclick="toggleLayer('region')">🗺️ Region</button>
+                </div>
+            </div>
+            <div id="list"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const URBAN_COLORS = ['#818cf8','#a78bfa','#c084fc','#e879f9','#f472b6','#fb7185','#f87171','#fb923c','#fbbf24','#60a5fa'];
+        const RURAL_COLORS = ['#4ade80','#34d399','#2dd4bf','#22d3ee','#a3e635'];
+        const REGION_COLORS = ['#fbbf24','#f59e0b','#d97706','#b45309','#92400e'];
+
+        const map = L.map('map').setView([17.005, 81.785], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19,
+        }).addTo(map);
+
+        let urbanLayer, ruralLayer, regionLayer;
+        let allFeatures = { urban: [], rural: [], region: [] };
+        let layerMap = {};
+        let visibility = { urban: true, rural: true, region: false };
+
+        function makePopup(p, type) {
+            const cls = type === 'urban' ? 'urban' : 'rural';
+            const label = type === 'urban' ? 'Sachivalayam' : 'Village';
+            let html = `<div class="popup-title ${cls}">${p.name}</div>`;
+            if (p.code) html += `<div class="popup-row"><strong>Code:</strong> ${p.code}</div>`;
+            if (p.address) html += `<div class="popup-row"><strong>Address:</strong> ${p.address}</div>`;
+            if (p.mandal) html += `<div class="popup-row"><strong>Mandal:</strong> ${p.mandal}</div>`;
+            if (p.district) html += `<div class="popup-row"><strong>District:</strong> ${p.district}</div>`;
+            if (p.shape_area) html += `<div class="popup-row"><strong>Area:</strong> ${(p.shape_area/1e6).toFixed(2)} sq km</div>`;
+            html += `<div class="popup-row"><strong>Type:</strong> ${label}</div>`;
+            return html;
+        }
+
+        function loadLayer(url, type, colors) {
+            return fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    allFeatures[type] = data.features;
+                    const layer = L.geoJSON(data, {
+                        style: (feature) => {
+                            const idx = data.features.indexOf(feature);
+                            const c = colors[idx % colors.length];
+                            return { color: c, weight: type === 'region' ? 1 : 2, opacity: 0.8, fillColor: c, fillOpacity: type === 'region' ? 0.08 : 0.15 };
+                        },
+                        onEachFeature: (feature, lyr) => {
+                            const p = feature.properties;
+                            lyr.bindPopup(makePopup(p, type));
+                            layerMap[type + ':' + p.name] = lyr;
+                            lyr.on('mouseover', function() { this.setStyle({ fillOpacity: 0.4, weight: 3 }); });
+                            lyr.on('mouseout', function() { layer.resetStyle(this); });
+                        }
+                    });
+                    return layer;
+                });
+        }
+
+        Promise.all([
+            loadLayer('data/rajahmundry_sachivalayams.geojson', 'urban', URBAN_COLORS),
+            loadLayer('data/rajahmundry_rural_only.geojson', 'rural', RURAL_COLORS),
+            loadLayer('data/rajahmundry_region_villages.geojson', 'region', REGION_COLORS),
+        ]).then(([u, r, reg]) => {
+            urbanLayer = u.addTo(map);
+            ruralLayer = r.addTo(map);
+            regionLayer = reg; // not added by default
+            document.getElementById('urban-count').textContent = allFeatures.urban.length;
+            document.getElementById('rural-count').textContent = allFeatures.rural.length;
+            map.fitBounds(urbanLayer.getBounds().extend(ruralLayer.getBounds()), { padding: [20, 20] });
+            buildList();
+        });
+
+        function toggleLayer(type) {
+            visibility[type] = !visibility[type];
+            const btn = document.querySelector(`.toggle-btn.${type}`);
+            btn.classList.toggle('active');
+            const layers = { urban: urbanLayer, rural: ruralLayer, region: regionLayer };
+            if (visibility[type]) {
+                layers[type].addTo(map);
+            } else {
+                map.removeLayer(layers[type]);
+            }
+            buildList();
+        }
+
+        function buildList() {
+            const q = (document.getElementById('search').value || '').toLowerCase();
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+            const types = ['urban', 'rural', 'region'];
+            types.forEach(type => {
+                if (!visibility[type]) return;
+                const feats = allFeatures[type].filter(f => {
+                    const p = f.properties;
+                    return (p.name || '').toLowerCase().includes(q) ||
+                           (p.address || '').toLowerCase().includes(q) ||
+                           (p.code || '').includes(q) ||
+                           (p.mandal || '').toLowerCase().includes(q);
+                });
+                feats.forEach(f => {
+                    const p = f.properties;
+                    const div = document.createElement('div');
+                    div.className = 'sv-item';
+                    const badgeClass = type === 'urban' ? 'badge-urban' : type === 'rural' ? 'badge-rural' : 'badge-region';
+                    const badgeLabel = type === 'urban' ? 'Urban' : type === 'rural' ? 'Rural' : 'Region';
+                    div.innerHTML = `
+                        <div class="sv-name">${p.name} <span class="badge ${badgeClass}">${badgeLabel}</span></div>
+                        <div class="sv-meta">${p.code ? 'Code: ' + p.code : ''} ${p.mandal ? '· ' + p.mandal : ''} ${p.sno ? '· #' + p.sno : ''}</div>
+                        ${p.address ? `<div class="sv-address">${p.address}</div>` : ''}
+                    `;
+                    div.onclick = () => {
+                        document.querySelectorAll('.sv-item.active').forEach(el => el.classList.remove('active'));
+                        div.classList.add('active');
+                        const lyr = layerMap[type + ':' + p.name];
+                        if (lyr) {
+                            map.fitBounds(lyr.getBounds(), { padding: [60, 60], maxZoom: 16 });
+                            lyr.openPopup();
+                        }
+                    };
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        document.getElementById('search').addEventListener('input', buildList);
+    </script>
+</body>
+</html>

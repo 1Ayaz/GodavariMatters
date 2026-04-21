@@ -1,0 +1,93 @@
+📘 GodavariMatters: Core Architecture & Product Blueprint
+1. Executive Summary & Philosophy
+GodavariMatters is a hyper-local, frictionless civic accountability dashboard built for Rajamahendravaram. It replaces the "Black Box" of traditional municipal reporting (where complaints disappear into private government databases) with a "Glass Box" model. Every reported issue is public, undeniable, and mathematically mapped to the exact government worker legally responsible for resolving it.
+
+Core Mission: Protect the Godavari river and surrounding city infrastructure through public transparency and targeted accountability.
+
+Design Language: Modern, minimal, and authoritative. Dark UI (#0F1117), deep contrast cards (#1A1D27), and high-urgency action accents (Premium Orange #E8390E).
+
+2. The Tech Stack
+Framework: Next.js 14+ (App Router) for server-side routing and fast API responses.
+
+Database & Auth: Supabase (PostgreSQL) for relational data storage.
+
+Storage: Supabase Storage (Public Bucket: pollution_snaps) for fast, anonymous image hosting.
+
+Mapping: react-leaflet to handle client-side rendering of the GPS data.
+
+Styling: Tailwind CSS for rapid UI development.
+
+3. The Core UX: The Frictionless Input
+To achieve high adoption, the application requires zero logins, zero typing, and zero dropdowns from the user.
+
+The 2-Bucket Visual Interface:
+Instead of bureaucratic forms, users interact with a highly visual CSS Grid of clickable issue cards, cleanly split into two administrative buckets:
+
+Bucket 1: Sanitation (Street-Level)
+
+Cards: 🍂 Dry Waste | 🍎 Wet Waste | 🗑️ Mixed Dump | ☣️ Medical Waste
+
+Bucket 2: Water (Infrastructure-Level)
+
+Cards: 🌊 Clogged Drain | 🏞️ River Dump | 💧 Pond Pollution
+
+The Action Trigger:
+A massive "Snap Issue" button invokes the native device camera (<input type="file" capture="environment">). When snapped, the app silently captures the device's exact GPS coordinates in the background.
+
+4. The Backend Brain: The Accountability Engine
+This is the proprietary technology that separates GodavariMatters from every other civic app.
+
+The Spatial Grid: The backend holds a static JSON array of the exact GPS coordinates and boundaries of all 96 Sachivalayams in the city.
+
+The Nearest-Neighbor Math: When a GPS coordinate is captured, the backend runs the Haversine formula to calculate the physical distance between the user's pin and all 96 local secretariats, instantly snapping the issue to the closest jurisdiction.
+
+The Routing Matrix: Based on the matched jurisdiction and the selected visual card, the engine dynamically assigns the specific accountable official:
+
+If a Sanitation Card was clicked: Assigns the [Matched Sachivalayam] Sanitation & Environment Secretary.
+
+If a Water Card was clicked: Assigns the [Matched Sachivalayam] Amenities Secretary.
+
+5. The Output: The "Sniper Strike" Resolution
+GodavariMatters does not store private phone numbers to avoid worker harassment. Instead, it weaponizes the official RMC infrastructure by providing them with undeniable, highly organized data.
+
+When a user clicks on an open issue on the map, they are presented with a single, highly visible WhatsApp action button: "Send Official Alert".
+
+This triggers a URL encoded payload directly to the official RMC Grievance Line (9494-060-060) with this exact, aggressive format:
+
+🚨 GodavariMatters: Public Sanitation Alert 🚨
+
+Issue: [Selected Card, e.g., Mixed Garbage Dump]
+Live GPS Map: https://www.google.com/maps?q={lat},{lng}
+Photographic Proof: [Supabase Image URL]
+
+🎯 JURISDICTION ASSIGNMENT
+According to spatial mapping data, this exact coordinate falls strictly under the [Matched Sachivalayam].
+
+Please log this into the Spandana system and immediately dispatch the [Assigned Secretary] to resolve this.
+
+6. Supabase Database Schema
+To maintain MVP speed, the database is flat and relies on a single core table to hold the fully processed data.
+
+SQL
+create table reports (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  
+  -- Location
+  lat double precision not null,
+  lng double precision not null,
+  
+  -- Media
+  image_url text not null, 
+  
+  -- The 2-Bucket Classification
+  issue_group text not null, -- "Sanitation" or "Water"
+  issue_type text not null, -- e.g., "Mixed Dump"
+  
+  -- Engine Output
+  assigned_sachivalayam text not null, -- e.g., "Jampeta-01"
+  accountable_secretary text not null, -- e.g., "Sanitation & Environment Secretary"
+  
+  -- Public Tracking
+  status text default 'Open' not null 
+);
