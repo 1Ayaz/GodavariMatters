@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, useMap, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
@@ -25,29 +25,25 @@ function MapControls() {
   const map = useMap()
   const { actions } = useApp()
 
-  const handleZoomIn = () => map.zoomIn()
-  const handleZoomOut = () => map.zoomOut()
-  const handleGPS = () => {
-    if (!navigator.geolocation) return alert('GPS not available')
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        map.flyTo([loc.lat, loc.lng], 16, { duration: 1.5 })
-        actions.setUserLocation(loc)
-      },
-      () => alert('Could not get your location. Please enable GPS.')
-    )
-  }
-
   return (
     <div className="map-controls">
-      <button className="map-ctrl-btn" onClick={handleZoomIn} title="Zoom In">
+      <button className="map-ctrl-btn" onClick={() => map.zoomIn()} title="Zoom In">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button className="map-ctrl-btn" onClick={handleZoomOut} title="Zoom Out">
+      <button className="map-ctrl-btn" onClick={() => map.zoomOut()} title="Zoom Out">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button className="map-ctrl-btn gps-btn" onClick={handleGPS} title="My Location">
+      <button className="map-ctrl-btn gps-btn" onClick={() => {
+        if (!navigator.geolocation) return alert('GPS not available')
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+            map.flyTo([loc.lat, loc.lng], 16, { duration: 1.5 })
+            actions.setUserLocation(loc)
+          },
+          () => alert('Could not get your location. Please enable GPS.')
+        )
+      }} title="My Location">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
       </button>
     </div>
@@ -62,7 +58,7 @@ function BoundaryLayer() {
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
 
-  // Count reports per area for coloring
+  // Count reports per area
   const reportsByArea = {}
   state.reports.forEach(r => {
     const area = r.assigned_area || ''
@@ -70,7 +66,7 @@ function BoundaryLayer() {
     reportsByArea[area]++
   })
 
-  const style = useCallback((feature) => {
+  const getStyle = useCallback((feature) => {
     const isUrban = feature.properties.type === 'urban_sachivalayam'
     const name = feature.properties.name || ''
     const count = reportsByArea[name] || 0
@@ -89,44 +85,33 @@ function BoundaryLayer() {
     const isUrban = feature.properties.type === 'urban_sachivalayam'
     const count = reportsByArea[name] || 0
 
-    // Hover highlight + tooltip
-    layer.on('mouseover', (e) => {
-      layer.setStyle({
-        weight: 2.5,
-        fillOpacity: 0.3,
-        fillColor: '#E8390E',
-        opacity: 0.9,
-      })
+    // Use Leaflet's built-in bindTooltip — ONLY shows on hover
+    layer.bindTooltip(
+      `<div class="wt-inner"><strong>${name}</strong><span>${isUrban ? 'Urban Sachivalayam' : 'Rural'} · ${count} report${count !== 1 ? 's' : ''}</span></div>`,
+      { sticky: true, className: 'ward-tooltip', direction: 'top', offset: [0, -12], opacity: 1 }
+    )
+
+    const originalStyle = getStyle(feature)
+
+    layer.on('mouseover', () => {
+      layer.setStyle({ weight: 2.5, fillOpacity: 0.3, fillColor: '#E8390E', opacity: 0.9 })
       layer.bringToFront()
-      // Show tooltip at mouse position
-      const tooltip = L.tooltip({ className: 'ward-tooltip', direction: 'top', offset: [0, -10] })
-        .setContent(`<strong>${name}</strong><br/>${isUrban ? 'Urban Sachivalayam' : 'Rural'}<br/>${count} report${count !== 1 ? 's' : ''}`)
-        .setLatLng(e.latlng)
-      layer._customTooltip = tooltip
-      tooltip.addTo(e.target._map)
     })
-    layer.on('mousemove', (e) => {
-      if (layer._customTooltip) layer._customTooltip.setLatLng(e.latlng)
+    layer.on('mouseout', () => {
+      layer.setStyle(originalStyle)
     })
-    layer.on('mouseout', (e) => {
-      layer.setStyle(style(feature))
-      if (layer._customTooltip) {
-        e.target._map.removeLayer(layer._customTooltip)
-        layer._customTooltip = null
-      }
-    })
-  }, [reportsByArea, style])
+  }, [reportsByArea, getStyle])
 
   if (!geojson) return null
 
-  // Split: render rural first (behind), urban second (on top)
+  // Render rural first (behind), then urban on top
   const rural = { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') }
   const urban = { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
 
   return (
     <>
-      <GeoJSON data={rural} style={style} onEachFeature={onEachFeature} key={'rural-' + JSON.stringify(reportsByArea)} />
-      <GeoJSON data={urban} style={style} onEachFeature={onEachFeature} key={'urban-' + JSON.stringify(reportsByArea)} />
+      <GeoJSON data={rural} style={getStyle} onEachFeature={onEachFeature} key={'r-' + state.reports.length} />
+      <GeoJSON data={urban} style={getStyle} onEachFeature={onEachFeature} key={'u-' + state.reports.length} />
     </>
   )
 }
@@ -143,15 +128,8 @@ function ReportMarkers() {
         key={report.id}
         center={[report.lat, report.lng]}
         radius={8}
-        pathOptions={{
-          color: '#fff',
-          weight: 2,
-          fillColor: color,
-          fillOpacity: 0.9,
-        }}
-        eventHandlers={{
-          click: () => actions.selectReport(report)
-        }}
+        pathOptions={{ color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.9 }}
+        eventHandlers={{ click: () => actions.selectReport(report) }}
       />
     )
   })
@@ -159,22 +137,12 @@ function ReportMarkers() {
 
 export default function MapView() {
   const { state } = useApp()
-
   if (state.activeView !== 'map') return null
 
   return (
     <div className="view-panel map-panel active">
-      <MapContainer
-        center={RJY_CENTER}
-        zoom={13}
-        className="map-container"
-        zoomControl={false}
-        attributionControl={false}
-      >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          maxZoom={19}
-        />
+      <MapContainer center={RJY_CENTER} zoom={13} className="map-container" zoomControl={false} attributionControl={false}>
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
         <BoundaryLayer />
         <ReportMarkers />
         <MapControls />
