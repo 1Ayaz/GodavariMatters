@@ -105,7 +105,7 @@ export default function ReportSheet() {
             </div>
             <div className="loc-text">
               <strong>{locStatus === 'success' ? '📍 Location captured' : locStatus === 'error' ? '❌ Location access failed' : '⏳ Acquiring location...'}</strong>
-              <span>{locStatus === 'success' ? `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}` : 'GPS coordinates captured silently in background'}</span>
+              <span>{locStatus === 'success' ? 'GPS coordinates captured · Auto-detecting sachivalayam' : 'GPS coordinates captured silently in background'}</span>
             </div>
           </div>
 

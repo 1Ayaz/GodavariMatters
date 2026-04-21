@@ -54,7 +54,7 @@ export default function SplashScreen({ onDismiss }) {
         <div className="splash-cta">Tap anywhere to continue</div>
       </div>
       <div className="splash-brand">
-        <span>Godavari</span><span className="splash-brand-accent">Matters</span>
+        <span>Godavar</span><span className="splash-brand-accent">!</span><span>Matters</span>
       </div>
     </div>
   )

@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
 
 const RJY_CENTER = [17.0005, 81.804]
 const SEVERITY_COLORS = {
-  minor: '#f59e0b',
+  minor: '#fb923c',
   moderate: '#f97316',
   severe: '#ef4444',
   critical: '#dc2626',
@@ -74,13 +74,12 @@ function BoundaryLayer() {
     const isUrban = feature.properties.type === 'urban_sachivalayam'
     const name = feature.properties.name || ''
     const count = reportsByArea[name] || 0
-    // Heat: more reports = more red fill
-    const fillOpacity = count > 0 ? Math.min(0.35, 0.05 + count * 0.03) : 0.04
+    const fillOpacity = count > 0 ? Math.min(0.35, 0.05 + count * 0.03) : (isUrban ? 0.04 : 0.02)
     return {
-      color: isUrban ? '#E8390E' : '#3b82f6',
-      weight: 1.2,
-      opacity: 0.5,
-      fillColor: count > 0 ? '#E8390E' : (isUrban ? '#E8390E' : '#3b82f6'),
+      color: isUrban ? '#E8390E' : '#94a3b8',
+      weight: isUrban ? 1.2 : 0.6,
+      opacity: isUrban ? 0.5 : 0.25,
+      fillColor: count > 0 ? '#E8390E' : (isUrban ? '#E8390E' : '#94a3b8'),
       fillOpacity,
     }
   }, [reportsByArea])
@@ -90,30 +89,46 @@ function BoundaryLayer() {
     const isUrban = feature.properties.type === 'urban_sachivalayam'
     const count = reportsByArea[name] || 0
 
-    // Tooltip on hover
-    layer.bindTooltip(
-      `<strong>${name}</strong><br/>${isUrban ? 'Urban Sachivalayam' : 'Rural'}<br/>${count} report${count !== 1 ? 's' : ''}`,
-      { sticky: true, className: 'ward-tooltip', direction: 'top', offset: [0, -10] }
-    )
-
-    // Hover highlight
-    layer.on('mouseover', () => {
+    // Hover highlight + tooltip
+    layer.on('mouseover', (e) => {
       layer.setStyle({
         weight: 2.5,
-        fillOpacity: 0.25,
+        fillOpacity: 0.3,
         fillColor: '#E8390E',
-        opacity: 0.8,
+        opacity: 0.9,
       })
       layer.bringToFront()
+      // Show tooltip at mouse position
+      const tooltip = L.tooltip({ className: 'ward-tooltip', direction: 'top', offset: [0, -10] })
+        .setContent(`<strong>${name}</strong><br/>${isUrban ? 'Urban Sachivalayam' : 'Rural'}<br/>${count} report${count !== 1 ? 's' : ''}`)
+        .setLatLng(e.latlng)
+      layer._customTooltip = tooltip
+      tooltip.addTo(e.target._map)
     })
-    layer.on('mouseout', () => {
+    layer.on('mousemove', (e) => {
+      if (layer._customTooltip) layer._customTooltip.setLatLng(e.latlng)
+    })
+    layer.on('mouseout', (e) => {
       layer.setStyle(style(feature))
+      if (layer._customTooltip) {
+        e.target._map.removeLayer(layer._customTooltip)
+        layer._customTooltip = null
+      }
     })
   }, [reportsByArea, style])
 
   if (!geojson) return null
 
-  return <GeoJSON data={geojson} style={style} onEachFeature={onEachFeature} key={JSON.stringify(reportsByArea)} />
+  // Split: render rural first (behind), urban second (on top)
+  const rural = { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') }
+  const urban = { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
+
+  return (
+    <>
+      <GeoJSON data={rural} style={style} onEachFeature={onEachFeature} key={'rural-' + JSON.stringify(reportsByArea)} />
+      <GeoJSON data={urban} style={style} onEachFeature={onEachFeature} key={'urban-' + JSON.stringify(reportsByArea)} />
+    </>
+  )
 }
 
 function ReportMarkers() {

@@ -16,7 +16,7 @@
   --accent-hover: #d13209;
   --green: #16a34a;
   --green-light: #ecfdf5;
-  --severity-minor: #f59e0b;
+  --severity-minor: #fb923c;
   --severity-moderate: #f97316;
   --severity-severe: #ef4444;
   --severity-critical: #dc2626;
@@ -226,7 +226,7 @@ input { font-family: var(--font); }
   font-size: 11px; font-weight: 700; padding: 3px 8px;
   border-radius: var(--radius-pill); text-transform: capitalize; flex-shrink: 0;
 }
-.wr-severity.minor { color: var(--severity-minor); background: #fef9ee; }
+.wr-severity.minor { color: var(--severity-minor); background: #fff3ed; }
 .wr-severity.moderate { color: var(--severity-moderate); background: #fff3ed; }
 .wr-severity.severe { color: var(--severity-severe); background: #fef2f2; }
 .wr-severity.critical { color: var(--severity-critical); background: #fef2f2; font-weight: 800; }
@@ -337,7 +337,7 @@ input { font-family: var(--font); }
 }
 .pill:hover { border-color: #ccc; }
 .pill.active { border-color: var(--severity-moderate); background: #fff7ed; }
-.pill.active[data-severity="minor"] { border-color: var(--severity-minor); background: #fffbeb; }
+.pill.active[data-severity="minor"] { border-color: var(--severity-minor); background: #fff7ed; }
 .pill.active[data-severity="moderate"] { border-color: var(--severity-moderate); background: #fff7ed; }
 .pill.active[data-severity="severe"] { border-color: var(--severity-severe); background: #fef2f2; }
 .pill.active[data-severity="critical"] { border-color: var(--severity-critical); background: #fef2f2; }
@@ -378,13 +378,13 @@ input { font-family: var(--font); }
   font-size: 11px; font-weight: 800; padding: 3px 8px;
   border-radius: var(--radius-pill); letter-spacing: 0.5px;
 }
-.severity-badge.minor { color: var(--severity-minor); background: #fef9ee; }
+.severity-badge.minor { color: var(--severity-minor); background: #fff3ed; }
 .severity-badge.moderate { color: var(--severity-moderate); background: #fff3ed; }
 .severity-badge.severe { color: var(--severity-severe); background: #fef2f2; }
 .severity-badge.critical { color: var(--severity-critical); background: #fef2f2; }
 .status-badge {
   font-size: 11px; font-weight: 700; padding: 3px 8px;
-  border-radius: var(--radius-pill); background: #fef9ee; color: var(--severity-minor);
+  border-radius: var(--radius-pill); background: #fff3ed; color: var(--severity-minor);
 }
 .status-badge.resolved { background: var(--green-light); color: var(--green); }
 .detail-landmark { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
@@ -560,15 +560,17 @@ input { font-family: var(--font); }
 /* Leader avatar */
 .leader-avatar-wrap { flex-shrink: 0; }
 
-/* ────────────────────────── RESPONSIVE — NammaKasa style ────────────────────────── */
-@media (min-width: 600px) {
-  body { background: #f0f0f4; overflow-y: auto; }
-  #root { width: 500px; max-width: 500px; margin: 0 auto; position: relative; background: var(--white); box-shadow: 0 0 60px rgba(0,0,0,0.12); min-height: 100vh; overflow: hidden; }
-  .topbar { max-width: 500px; left: 50%; transform: translateX(-50%); }
-  .view-switcher { max-width: 500px; left: 50%; transform: translateX(-50%); }
-  .view-panel { max-width: 500px; left: 50%; transform: translateX(-50%); }
-  .bottom-bar { max-width: 500px; left: 50%; transform: translateX(-50%); }
-  .stats-panel { max-width: 500px; left: 50%; transform: translateX(-50%) translateY(calc(100% - 170px)); }
+/* ────────────────────────── RESPONSIVE — Full width like NammaKasa ────────────────────────── */
+/* NammaKasa on desktop: full-width layout, map fills screen, everything responsive */
+@media (min-width: 768px) {
+  /* Bottom sheets get a max-width so they don't stretch across giant screens */
+  .overlay .bottom-sheet { max-width: 560px; }
+  
+  /* Stats panel floats at bottom center */
+  .stats-panel { max-width: 560px; left: 50%; transform: translateX(-50%) translateY(calc(100% - 170px)); }
   .stats-panel.expanded { transform: translateX(-50%) translateY(0); }
-  .overlay .bottom-sheet { max-width: 500px; }
+  
+  /* Bottom bar centered */
+  .bottom-bar { max-width: 560px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; box-shadow: 0 -2px 20px rgba(0,0,0,0.08); }
 }
+

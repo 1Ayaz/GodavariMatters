@@ -2,14 +2,12 @@ import { useMemo } from 'react'
 
 /**
  * NammaKasa-style Accountability / Blame Tree
- * Shows escalation chain: WHS → WAS → Municipal Commissioner → District Collector
- * Politicians (MLA/MP) shown separately at bottom with photos
+ * Escalation flows TOP-DOWN: Commissioner → WAS → WHS (ground level)
+ * Politicians shown separately at bottom
  */
 export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPoliticianClick }) {
-  const isUrban = jurisdiction?.type === 'urban'
   const areaCode = jurisdiction?.code
 
-  // Find the matching sachivalayam official data
   const officials = useMemo(() => {
     if (!sachivalayamOfficials || !areaCode) return null
     return sachivalayamOfficials.find(s => s.code === areaCode)
@@ -32,22 +30,18 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
         <div className="bt-connector" />
         <div className="bt-branches">
           <div className="bt-branch">
-            <div className="bt-avatar bt-avatar-blue">
-              <span>RMC</span>
-            </div>
+            <div className="bt-avatar bt-avatar-blue"><span>RMC</span></div>
             <div className="bt-role-name">RMC</div>
             <div className="bt-role-sub">Garbage Authority</div>
           </div>
           <div className="bt-branch">
-            <div className="bt-avatar bt-avatar-warn">
-              <span>!</span>
-            </div>
+            <div className="bt-avatar bt-avatar-warn"><span>!</span></div>
             <div className="bt-role-name" style={{ color: '#d97706' }}>Corporator</div>
             <div className="bt-role-sub" style={{ color: '#d97706' }}>Vacant</div>
           </div>
         </div>
 
-        {/* Chain: Commissioner → WAS → WHS */}
+        {/* Chain TOP-DOWN: Commissioner → WAS → WHS */}
         <div className="bt-chain">
           <div className="bt-line" />
           <div className="bt-node">

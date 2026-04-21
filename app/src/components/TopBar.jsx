@@ -14,7 +14,7 @@ export default function TopBar() {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <span className="brand">Godavari<span className="brand-accent">Matters</span></span>
+        <span className="brand">Godavar<span className="brand-accent">!</span>Matters</span>
         <span className="version">v1.0</span>
       </div>
       <button className="icon-btn" onClick={handleShare} title="Share App">
