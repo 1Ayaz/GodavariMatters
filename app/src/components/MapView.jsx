@@ -253,7 +253,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     // Create unified city boundary using Turf
     let unified = null
     try {
-      if (u.features.length > 0) {
+      if (u.features.length > 0 && window.turf) {
         let base = u.features[0]
         for (let i = 1; i < u.features.length; i++) {
           try {
