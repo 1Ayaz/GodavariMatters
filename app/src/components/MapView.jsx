@@ -98,36 +98,38 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
 
+  // NammaKasa style: nearly invisible by default, only highlight on interaction
   const defaultUrbanStyle = {
-    color: '#E8390E',
-    weight: 1,
-    opacity: 0.5,
-    fillColor: '#E8390E',
-    fillOpacity: 0.04,
+    color: 'rgba(255,255,255,0.18)',
+    weight: 0.8,
+    opacity: 1,
+    fillColor: 'transparent',
+    fillOpacity: 0,
   }
 
   const hoverUrbanStyle = {
     color: '#E8390E',
-    weight: 2.5,
-    opacity: 1,
+    weight: 2,
+    opacity: 0.9,
     fillColor: '#E8390E',
-    fillOpacity: 0.15,
+    fillOpacity: 0.12,
   }
 
   const selectedUrbanStyle = {
-    color: '#fff',
+    color: '#E8390E',
     weight: 2.5,
     opacity: 1,
     fillColor: '#E8390E',
-    fillOpacity: 0.25,
+    fillOpacity: 0.22,
   }
 
+  // Rural: slightly visible so Rajahmundry Rural area is distinct from empty map
   const ruralStyle = {
-    color: 'rgba(255,255,255,0.08)',
-    weight: 0.3,
-    opacity: 0.2,
-    fillColor: '#fff',
-    fillOpacity: 0.01,
+    color: 'rgba(100,180,200,0.22)',
+    weight: 0.6,
+    opacity: 1,
+    fillColor: 'rgba(100,180,200,0.03)',
+    fillOpacity: 1,
   }
 
   const onEachUrban = useCallback((feature, layer) => {
