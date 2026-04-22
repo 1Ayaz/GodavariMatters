@@ -44,16 +44,16 @@ export default function SplashScreen({ onDismiss }) {
             <span className="sdc-value sdc-accent">240+ Tons</span>
           </div>
           <div className="splash-data-card">
+            <span className="sdc-label">RMC Sanitation Budget</span>
+            <span className="sdc-value">₹60 Crores+</span>
+          </div>
+          <div className="splash-data-card">
+            <span className="sdc-label">Annual User Charges</span>
+            <span className="sdc-value sdc-accent">₹2,400/House</span>
+          </div>
+          <div className="splash-data-card">
             <span className="sdc-label">Godavari Pollution</span>
             <span className="sdc-value">5,000kg Plastic/Wk</span>
-          </div>
-          <div className="splash-data-card">
-            <span className="sdc-label">Annual Sanitation Tax</span>
-            <span className="sdc-value sdc-accent">₹1,200/Household</span>
-          </div>
-          <div className="splash-data-card">
-            <span className="sdc-label">Accountability</span>
-            <span className="sdc-value">96 Units</span>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export default function SplashScreen({ onDismiss }) {
         <div className="splash-cta">{t('splash_tap', lang)}</div>
       </div>
       <div className="splash-brand">
-        <span>{t('app_title', lang).replace('!', '')}</span>
+        <span>Godavar<span className="splash-brand-accent">!</span>Matters</span>
       </div>
     </div>
   )

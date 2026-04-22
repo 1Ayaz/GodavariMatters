@@ -649,9 +649,9 @@ input { font-family: var(--font); }
 /* ────────────────────────── SPLASH SCREEN ────────────────────────── */
 .splash-screen {
   position: fixed; inset: 0; z-index: 9999;
-  background: rgba(10, 10, 15, 0.4);
-  backdrop-filter: blur(60px) saturate(180%);
-  -webkit-backdrop-filter: blur(60px) saturate(180%);
+  background: rgba(10, 10, 15, 0.65);
+  backdrop-filter: blur(80px) saturate(200%);
+  -webkit-backdrop-filter: blur(80px) saturate(200%);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer; animation: splashIn 0.6s ease; padding: 24px;
 }
