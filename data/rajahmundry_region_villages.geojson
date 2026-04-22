@@ -1,5 +1,6 @@
 {
   "type": "FeatureCollection",
+  "name": "Rajamahendravaram_Region",
   "features": [
     {
       "type": "Feature",
@@ -93,10 +94,10 @@
         ]
       },
       "properties": {
-        "name": "Torredu",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "001",
+        "village_code": "NA",
         "shape_area": 10766320.3238363,
         "type": "rural_village"
       }
@@ -173,10 +174,10 @@
         ]
       },
       "properties": {
-        "name": "Katheru",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "003",
+        "village_code": "NA",
         "shape_area": 9143941.24822497,
         "type": "rural_village"
       }
@@ -257,10 +258,10 @@
         ]
       },
       "properties": {
-        "name": "Dowleswaram",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "008",
+        "village_code": "NA",
         "shape_area": 7331807.79247418,
         "type": "rural_village"
       }
@@ -365,116 +366,12 @@
         ]
       },
       "properties": {
-        "name": "Hukumpeta",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "006",
+        "village_code": "NA",
         "shape_area": 5929697.49190553,
         "type": "rural_village"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "MultiPolygon",
-        "coordinates": [
-          [
-            [
-              [
-                81.78440108,
-                17.03646333
-              ],
-              [
-                81.7863025,
-                17.03267605
-              ],
-              [
-                81.790873,
-                17.0287631
-              ],
-              [
-                81.79436762,
-                17.02850724
-              ],
-              [
-                81.80116615,
-                17.02143493
-              ],
-              [
-                81.803216,
-                17.01059721
-              ],
-              [
-                81.78708425,
-                16.99519868
-              ],
-              [
-                81.78012722,
-                16.99709594
-              ],
-              [
-                81.78012572,
-                17.00009285
-              ],
-              [
-                81.7747394,
-                17.00175715
-              ],
-              [
-                81.76904318,
-                16.99702977
-              ],
-              [
-                81.76560074,
-                17.00403055
-              ],
-              [
-                81.7657887,
-                17.00869976
-              ],
-              [
-                81.76809816,
-                17.01144617
-              ],
-              [
-                81.76922479,
-                17.01555296
-              ],
-              [
-                81.76749015,
-                17.02117416
-              ],
-              [
-                81.7671037,
-                17.03157834
-              ],
-              [
-                81.77579351,
-                17.02929097
-              ],
-              [
-                81.77898099,
-                17.03098106
-              ],
-              [
-                81.78276135,
-                17.03662068
-              ],
-              [
-                81.78440108,
-                17.03646333
-              ]
-            ]
-          ]
-        ]
-      },
-      "properties": {
-        "name": "Rajahmundry (U)",
-        "mandal": "Rajahmundry (Fully Urban)",
-        "district": "East Godavari",
-        "village_code": " ",
-        "shape_area": 12255420.3568113,
-        "type": "urban_boundary"
       }
     },
     {
@@ -593,10 +490,10 @@
         ]
       },
       "properties": {
-        "name": "Bommuru",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "007",
+        "village_code": "NA",
         "shape_area": 6885259.06790734,
         "type": "rural_village"
       }
@@ -761,10 +658,10 @@
         ]
       },
       "properties": {
-        "name": "Rajahmundry Part",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "004",
+        "village_code": "NA",
         "shape_area": 13957576.9256788,
         "type": "rural_village"
       }
@@ -861,10 +758,10 @@
         ]
       },
       "properties": {
-        "name": "Kolamuru",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "002",
+        "village_code": "NA",
         "shape_area": 15575834.1937911,
         "type": "rural_village"
       }
@@ -929,10 +826,10 @@
         ]
       },
       "properties": {
-        "name": "Rajavolu",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "009",
+        "village_code": "NA",
         "shape_area": 4781268.18708138,
         "type": "rural_village"
       }
@@ -1053,12 +950,116 @@
         ]
       },
       "properties": {
-        "name": "Morampudi (Rural)",
+        "name": "Unknown",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "005",
+        "village_code": "NA",
         "shape_area": 7587768.28162301,
         "type": "rural_village"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                81.78440108,
+                17.03646333
+              ],
+              [
+                81.7863025,
+                17.03267605
+              ],
+              [
+                81.790873,
+                17.0287631
+              ],
+              [
+                81.79436762,
+                17.02850724
+              ],
+              [
+                81.80116615,
+                17.02143493
+              ],
+              [
+                81.803216,
+                17.01059721
+              ],
+              [
+                81.78708425,
+                16.99519868
+              ],
+              [
+                81.78012722,
+                16.99709594
+              ],
+              [
+                81.78012572,
+                17.00009285
+              ],
+              [
+                81.7747394,
+                17.00175715
+              ],
+              [
+                81.76904318,
+                16.99702977
+              ],
+              [
+                81.76560074,
+                17.00403055
+              ],
+              [
+                81.7657887,
+                17.00869976
+              ],
+              [
+                81.76809816,
+                17.01144617
+              ],
+              [
+                81.76922479,
+                17.01555296
+              ],
+              [
+                81.76749015,
+                17.02117416
+              ],
+              [
+                81.7671037,
+                17.03157834
+              ],
+              [
+                81.77579351,
+                17.02929097
+              ],
+              [
+                81.77898099,
+                17.03098106
+              ],
+              [
+                81.78276135,
+                17.03662068
+              ],
+              [
+                81.78440108,
+                17.03646333
+              ]
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rajahmundry (U)",
+        "mandal": "Rajahmundry (Fully Urban)",
+        "district": "East Godavari",
+        "village_code": " ",
+        "shape_area": 12255420.3568113,
+        "type": "urban_boundary"
       }
     }
   ]
