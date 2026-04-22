@@ -379,9 +379,11 @@ export default function MapView() {
                 <div className="mip-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{infoData.name}</div>
                 <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
               </div>
-              <div className="mip-count" style={{ marginTop: 0, textAlign: 'right' }}>
-                <span className="mip-count-num" style={{ fontSize: '18px' }}>{infoData.count}</span>
-                <div style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.8 }}>{infoData.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}</div>
+              <div className="mip-count" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: '1.1' }}>
+                <span className="mip-count-num" style={{ fontSize: '22px', fontWeight: '900', color: 'var(--accent)' }}>{infoData.count}</span>
+                <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.5px' }}>
+                  {infoData.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}
+                </span>
               </div>
             </div>
             

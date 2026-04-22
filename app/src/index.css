@@ -69,7 +69,8 @@ input { font-family: var(--font); }
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 20px;
+  padding: 12px 24px;
+  height: 64px;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
@@ -77,7 +78,7 @@ input { font-family: var(--font); }
   box-shadow: 0 1px 8px rgba(0,0,0,0.03);
 }
 .topbar-left { display: flex; align-items: baseline; gap: 8px; }
-.brand { font-size: 21px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); }
+.brand { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; color: var(--text-primary); }
 .brand-accent { color: var(--accent); }
 .version {
   font-size: 10px; color: var(--accent); margin-left: 2px; font-weight: 700;
@@ -92,11 +93,11 @@ input { font-family: var(--font); }
 
 /* ────────────────────────── VIEW SWITCHER ────────────────────────── */
 .view-switcher {
-  position: fixed; top: 50px; left: 0; right: 0; z-index: 999;
+  position: fixed; top: 64px; left: 0; right: 0; z-index: 999;
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  padding: 8px 16px 8px;
+  padding: 10px 24px;
   border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 .filter-row { display: flex; align-items: center; gap: 8px; }
@@ -135,7 +136,7 @@ input { font-family: var(--font); }
 }
 
 /* ────────────────────────── MAP ────────────────────────── */
-.view-panel { position: fixed; top: 88px; left: 0; right: 0; bottom: 0; }
+.view-panel { position: fixed; top: 120px; left: 0; right: 0; bottom: 0; }
 .map-panel { z-index: 1; }
 
 .map-container {
