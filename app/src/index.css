@@ -857,6 +857,7 @@ input { font-family: var(--font); }
 .leader-avatar-wrap { flex-shrink: 0; }
 
 /* ────────────────────────── RESPONSIVE — Mobile First adjustments ────────────────────────── */
+@media (max-width: 767px) {
   .topbar { padding: 12px 14px; height: 60px; box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
   .brand { font-size: 20px; letter-spacing: -0.8px; }
   .version { font-size: 8px; padding: 1px 6px; }
