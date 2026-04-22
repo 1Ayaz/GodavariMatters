@@ -66,7 +66,8 @@ function WardBubbles({ boundaries, reportsByArea }) {
 
   return boundaries.features.map((feature) => {
     const name = feature.properties.name || 'Unknown'
-    const count = reportsByArea[name] || 0
+    const matchName = name.toUpperCase()
+    const count = reportsByArea[matchName] || 0
     if (count === 0) return null
 
     const center = getCentroid(feature)
@@ -105,7 +106,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   // Choropleth heatmap style
   const getUrbanStyle = useCallback((feature) => {
-    const count = reportsByArea?.[feature.properties.name] || 0
+    const name = (feature.properties.name || '').toUpperCase()
+    const count = reportsByArea?.[name] || 0
     let fillOpacity = 0
     if (count > 0) fillOpacity = Math.min(0.7, 0.05 + (count * 0.05))
     
@@ -136,7 +138,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   // ── Rural Styles ──
   const getRuralStyle = useCallback((feature) => {
-    const count = reportsByArea?.[feature.properties.name] || 0
+    const name = (feature.properties.name || '').toUpperCase()
+    const count = reportsByArea?.[name] || 0
     let fillOpacity = 0.05
     if (count > 0) fillOpacity = Math.min(0.5, 0.1 + (count * 0.05))
     
@@ -312,7 +315,7 @@ export default function MapView() {
   const reportsByArea = useMemo(() => {
     const map = {}
     state.reports.forEach(r => {
-      const area = r.assigned_area || ''
+      const area = (r.assigned_area || '').toUpperCase()
       if (!map[area]) map[area] = 0
       map[area]++
     })

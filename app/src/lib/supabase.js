@@ -117,8 +117,14 @@ export async function uploadImage(file) {
     return { url: publicUrl, isLocal: false }
   }
   
-  // Last resort: local blob URL (demo mode)
-  return { url: URL.createObjectURL(compressed), isLocal: true }
+  // Last resort: base64 (demo mode, persists in localStorage)
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(compressed)
+  })
+  return { url: base64, isLocal: true }
 }
 
 /**
