@@ -34,12 +34,34 @@ async function adminRejectResolved(reportId) {
   await supabase.from('reports').update({ status: 'unresolved', cleaned_image_url: null, admin_approved: false, admin_reviewed_at: new Date().toISOString() }).eq('id', reportId)
 }
 
-async function adminDeleteReport(reportId) {
+async function adminDeleteReport(reportId, report) {
   if (!supabase) {
     const reports = JSON.parse(localStorage.getItem('gm_reports') || '[]')
     localStorage.setItem('gm_reports', JSON.stringify(reports.filter(r => r.id !== reportId)))
     return
   }
+
+  // 1. Delete image from storage if possible
+  if (report?.image_url) {
+    try {
+      if (report.image_url.includes('cloudinary')) {
+        // We cannot delete from Cloudinary client-side via unsigned upload preset.
+        // It requires a signed signature from a secure backend.
+        // For now, we'll let it be on Cloudinary (25GB is huge).
+        console.warn('Cannot delete Cloudinary image from client-side without secure signature.')
+      } else if (report.image_url.includes('supabase.co')) {
+        // Delete from Supabase Storage
+        const fileName = report.image_url.split('/').pop()
+        if (fileName) {
+          await supabase.storage.from('pollution_snaps').remove([fileName])
+        }
+      }
+    } catch (e) {
+      console.error('Failed to delete image from storage:', e)
+    }
+  }
+
+  // 2. Delete report record
   await supabase.from('reports').delete().eq('id', reportId)
 }
 
@@ -230,7 +252,7 @@ function AdminReportCard({ report, onApprove, onReject, onDelete }) {
           <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 700 }}>✓ Verified resolved</div>
         )}
 
-        <button onClick={() => act(onDelete)} disabled={loading}
+        <button onClick={() => act(() => onDelete(report))} disabled={loading}
           style={{
             width: '100%', marginTop: 8, padding: '8px', borderRadius: 8, border: '1px solid #e8e8ec',
             background: 'transparent', color: '#9ca3af', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
@@ -384,7 +406,7 @@ export default function AdminPage() {
                 report={report}
                 onApprove={async (id) => { await adminApproveResolved(id); await fetchReports() }}
                 onReject={async (id) => { await adminRejectResolved(id); await fetchReports() }}
-                onDelete={async (id) => { await adminDeleteReport(id); await fetchReports() }}
+                onDelete={async (r) => { await adminDeleteReport(r.id, r); await fetchReports() }}
               />
             ))}
           </div>
