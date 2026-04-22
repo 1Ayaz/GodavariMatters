@@ -165,6 +165,13 @@ export function AppProvider({ children }) {
         seen_count: 0,
       }
 
+      // Prevent duplicates by checking proximity (within ~15 meters)
+      const isDuplicate = state.reports.some(r => {
+        const dist = Math.sqrt(Math.pow(r.lat - reportData.lat, 2) + Math.pow(r.lng - reportData.lng, 2))
+        return dist < 0.00015 // roughly 15-20 meters
+      })
+      if (isDuplicate) throw new Error("A similar report already exists at this location. Please 'Seen' that report instead.")
+
       const saved = await apiSubmit(report)
       dispatch({ type: 'ADD_REPORT', report: saved })
       dispatch({ type: 'SHOW_REPORT_FORM', show: false })

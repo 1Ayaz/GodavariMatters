@@ -27,7 +27,11 @@ export default function SplashScreen({ onDismiss }) {
   if (!visible) return null
 
   return (
-    <div className={`splash-screen${fadeOut ? ' fade-out' : ''}`} onClick={dismiss}>
+    <div className={`splash-screen${fadeOut ? ' fade-out' : ''}`} onClick={dismiss} style={{
+      backgroundImage: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url(/hero.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }}>
       <div className="splash-content">
         <div className="splash-badge">RAJAMAHENDRAVARAM</div>
         <h1 className="splash-title">

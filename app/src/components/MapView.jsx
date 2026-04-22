@@ -260,7 +260,10 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
             base = window.turf.union(base, u.features[i])
           } catch (e) { /* skip problematic geoms */ }
         }
-        unified = base
+        // Smooth, buffer, and simplify to fix 'jaggedness' and close tiny gaps
+        let buffered = window.turf.buffer(base, 0.01, { units: 'kilometers' })
+        let clean = window.turf.buffer(buffered, -0.01, { units: 'kilometers' })
+        unified = window.turf.simplify(clean, { tolerance: 0.0005, highQuality: true })
       }
     } catch (e) { console.warn('Turf union failed:', e) }
 
