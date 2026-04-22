@@ -1,8 +1,10 @@
 import { useMemo, useRef, useState, useCallback } from 'react'
 import { useApp } from '../lib/store'
+import { t } from '../lib/i18n'
 
 export default function StatsPanel() {
   const { state, filteredReports } = useApp()
+  const lang = state.lang || 'en'
   const [expanded, setExpanded] = useState(false)
   const panelRef = useRef(null)
   const startY = useRef(0)
@@ -63,19 +65,19 @@ export default function StatsPanel() {
       <div className="stats-cards">
         <div className="stat-card unresolved-card">
           <span className="stat-number">{stats.unresolved}</span>
-          <span className="stat-label">UNRESOLVED</span>
+          <span className="stat-label">{t('unresolved', lang)}</span>
         </div>
         <div className="stat-card resolved-card">
           <span className="stat-number">{stats.resolved}</span>
-          <span className="stat-label">RESOLVED</span>
+          <span className="stat-label">{t('resolved', lang)}</span>
         </div>
         <div className="stat-card rate-card">
           <span className="stat-number">{stats.rate}<small>%</small></span>
-          <span className="stat-label">FIXED RATE</span>
+          <span className="stat-label">{t('fixed_rate', lang)}</span>
         </div>
       </div>
 
-      <h3 className="section-title">WORST AREAS BY REPORTS</h3>
+      <h3 className="section-title">{t('worst_areas', lang)}</h3>
       {stats.leaderboard.map((item, i) => (
         <div key={item.name} className="lb-item">
           <span className={`lb-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
@@ -90,7 +92,7 @@ export default function StatsPanel() {
 
       {stats.leaderboard.length === 0 && (
         <p style={{ color: '#9ca3af', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>
-          No reports yet. Be the first to report! 📸
+          {t('no_reports_yet', lang)}
         </p>
       )}
     </div>

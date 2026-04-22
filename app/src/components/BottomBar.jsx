@@ -34,7 +34,7 @@ export default function BottomBar() {
               <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="3" strokeLinecap="round" />
             </svg>
           )}
-          {isMobile ? t('report_garbage', lang) : (lang === 'te' ? 'QR స్కాన్ చేసి రిపోర్ట్ చేయండి' : 'Scan QR to Report')}
+          {isMobile ? t('report_garbage', lang) : t('scan_qr', lang)}
         </button>
         <button className="leaderboard-fab" onClick={() => {
           const panel = document.querySelector('.stats-panel')

@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { useApp } from '../lib/store'
+import { t } from '../lib/i18n'
 
 // ── Contact info constants (safe to publish) ──
 const RMC_HELPLINE = '9494060060'
@@ -115,8 +117,8 @@ function ContactSheet({ person, onClose }) {
 
           <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 16 }}>
             {isRural
-              ? 'Contact your Panchayat Secretary in person at the Grama Sachivalayam for immediate response.'
-              : 'RMC is legally required to respond within 3 days. Screenshot this complaint for follow-up.'}
+              ? t('rural_note', lang)
+              : t('urban_note', lang)}
           </p>
         </div>
       </div>
@@ -158,6 +160,8 @@ function TreeNode({ avatar, avatarClass, roleName, roleLabel, sub, name, onClick
 }
 
 export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPoliticianClick }) {
+  const { state } = useApp()
+  const lang = state.lang || 'en'
   const [contactPerson, setContactPerson] = useState(null)
   const areaCode = jurisdiction?.code
   const isUrban = jurisdiction?.type === 'urban'
@@ -175,11 +179,11 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
 
   return (
     <>
-      <h3 className="section-title">ACCOUNTABILITY</h3>
+      <h3 className="section-title">{t('accountability', lang)}</h3>
       <div className="blame-tree">
         {/* Top: Your Sachivalayam */}
         <div className="bt-top">
-          <div className="bt-top-label">{isUrban ? 'Your Urban Sachivalayam' : 'Your Rural Gram Sachivalayam'}</div>
+          <div className="bt-top-label">{isUrban ? t('your_ward', lang) : t('your_village', lang)}</div>
           <div className="bt-top-value">{area}</div>
         </div>
 
@@ -191,28 +195,28 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
               <TreeNode
                 avatar="MC"
                 avatarClass="bt-avatar-blue"
-                roleName="Municipal Commissioner"
+                roleName={t('commissioner', lang)}
                 name="Rahul Meena, IAS"
                 sub="RMC HQ · City-wide SWM Head"
-                onClick={() => openContact({ role: 'commissioner', roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'Rajamahendravaram Municipal Corporation' })}
+                onClick={() => openContact({ role: 'commissioner', roleLabel: t('commissioner', lang), name: 'Rahul Meena, IAS', sub: 'Rajamahendravaram Municipal Corporation' })}
               />
               <div className="bt-line" />
               <TreeNode
                 avatar="WAS"
                 avatarClass="bt-avatar-blue"
-                roleName="Ward Admin Secretary"
+                roleName={t('was', lang)}
                 name={wasName}
                 sub="Escalation point for your ward"
-                onClick={() => openContact({ role: 'was', roleLabel: 'Ward Admin Secretary', name: wasName, sub: area + ' Sachivalayam' })}
+                onClick={() => openContact({ role: 'was', roleLabel: t('was', lang), name: wasName, sub: area + ' Sachivalayam' })}
               />
               <div className="bt-line" />
               <TreeNode
                 avatar="WHS"
                 avatarClass="bt-avatar-accent"
-                roleName="Ward Health Secretary"
+                roleName={t('whs', lang)}
                 name={whsName}
                 sub="Monitors waste collection on ground"
-                onClick={() => openContact({ role: 'whs', roleLabel: 'Ward Health Secretary', name: whsName, sub: area + ' Sachivalayam' })}
+                onClick={() => openContact({ role: 'whs', roleLabel: t('whs', lang), name: whsName, sub: area + ' Sachivalayam' })}
               />
             </>
           ) : (
@@ -221,19 +225,19 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
               <TreeNode
                 avatar="PS"
                 avatarClass="bt-avatar-blue"
-                roleName="Panchayat Secretary"
-                name="Panchayat Secretary (Gr-V)"
+                roleName={t('ps', lang)}
+                name={t('ps', lang) + " (Gr-V)"}
                 sub="Head of Grama Sachivalayam"
-                onClick={() => openContact({ role: 'rural', roleLabel: 'Panchayat Secretary', name: 'Panchayat Secretary', sub: area, isRural: true })}
+                onClick={() => openContact({ role: 'rural', roleLabel: t('ps', lang), name: t('ps', lang), sub: area, isRural: true })}
               />
               <div className="bt-line" />
               <TreeNode
                 avatar="EA"
                 avatarClass="bt-avatar-accent"
-                roleName="Engineering Assistant"
-                name="Engineering Assistant"
+                roleName={t('ea', lang)}
+                name={t('ea', lang)}
                 sub="Village sanitation & waste management"
-                onClick={() => openContact({ role: 'rural', roleLabel: 'Engineering Assistant', name: 'Engineering Assistant', sub: area, isRural: true })}
+                onClick={() => openContact({ role: 'rural', roleLabel: t('ea', lang), name: t('ea', lang), sub: area, isRural: true })}
               />
             </>
           )}
@@ -248,7 +252,7 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
                 background: 'var(--accent-light)', border: '1px solid var(--accent)',
                 color: 'var(--accent)', fontSize: 12, fontWeight: 700
               }}>
-              📞 Contact RMC Helpline
+              {t('rmc_helpline', lang)}
             </button>
           </div>
         )}
@@ -257,7 +261,7 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
       {/* Elected Representatives */}
       <div className="bt-separator" />
       <h3 className="section-title" style={{ color: '#9ca3af' }}>
-        ELECTED REPRESENTATIVES
+        {t('elected_reps', lang)}
       </h3>
       <div className="elected-row">
         {jurisdiction?.mla && (
@@ -291,7 +295,7 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
           </div>
         )}
       </div>
-      <p className="bt-note">Tap any official card to get contact options</p>
+      <p className="bt-note">{t('tap_contact', lang)}</p>
 
       {/* Contact Modal */}
       {contactPerson && (

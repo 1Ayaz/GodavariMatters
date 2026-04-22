@@ -22,7 +22,7 @@ export default function TopBar() {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <span className="brand">{t('app_title', lang).replace('!', '')}<span className="brand-accent">!</span></span>
+        <span className="brand">GodavariMatters<span className="brand-accent">!</span></span>
         <span className="version">v1.0</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

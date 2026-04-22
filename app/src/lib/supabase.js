@@ -122,16 +122,15 @@ export async function uploadImage(file) {
 }
 
 /**
- * Aggressively compress image for minimal storage usage.
- * 800px max dimension, 55% JPEG quality → typically 40-60KB per photo.
- * Also strips all EXIF metadata for privacy.
+ * Compress image and strip EXIF for privacy.
+ * 1200px max dimension, 85% JPEG quality — full quality for evidence.
  */
 function compressImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      const MAX_DIM = 800 // Aggressive: was 1200
+      const MAX_DIM = 1200
       let w = img.width, h = img.height
       
       if (w > h) {
@@ -153,7 +152,7 @@ function compressImage(file) {
           }
         },
         'image/jpeg',
-        0.55 // Aggressive quality: was 0.85 → saves ~70% storage
+        0.85 // High quality for evidence photos
       )
     }
     img.onerror = () => reject(new Error('Failed to load image'))

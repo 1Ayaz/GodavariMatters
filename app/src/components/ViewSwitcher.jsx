@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../lib/store'
+import { t } from '../lib/i18n'
 
 function Dropdown({ label, options, value, onChange }) {
   const [open, setOpen] = useState(false)
@@ -35,37 +36,38 @@ function Dropdown({ label, options, value, onChange }) {
 
 export default function ViewSwitcher() {
   const { state, actions } = useApp()
+  const lang = state.lang || 'en'
 
   return (
     <div className="view-switcher">
       <div className="filter-row">
         <Dropdown
-          label="All Severity"
+          label={t('all_severity', lang)}
           value={state.filterSeverity}
           onChange={actions.setSeverityFilter}
           options={[
-            { value: 'all', label: 'All Severity' },
-            { value: 'minor', label: 'Minor' },
-            { value: 'moderate', label: 'Moderate' },
-            { value: 'severe', label: 'Severe' },
-            { value: 'critical', label: 'Critical' },
+            { value: 'all', label: t('all_severity', lang) },
+            { value: 'minor', label: t('minor', lang) },
+            { value: 'moderate', label: t('moderate', lang) },
+            { value: 'severe', label: t('severe', lang) },
+            { value: 'critical', label: t('critical', lang) },
           ]}
         />
         <Dropdown
-          label="All Status"
+          label={t('all_status', lang)}
           value={state.filterStatus}
           onChange={actions.setStatusFilter}
           options={[
-            { value: 'all', label: 'All Status' },
-            { value: 'unresolved', label: 'Unresolved' },
-            { value: 'resolved', label: 'Resolved' },
+            { value: 'all', label: t('all_status', lang) },
+            { value: 'unresolved', label: t('unresolved', lang) },
+            { value: 'resolved', label: t('resolved', lang) },
           ]}
         />
         <div className="view-toggle">
           <button className={`toggle-btn${state.activeView === 'map' ? ' active' : ''}`}
-            onClick={() => actions.setView('map')}>Map</button>
+            onClick={() => actions.setView('map')}>{t('map', lang)}</button>
           <button className={`toggle-btn${state.activeView === 'list' ? ' active' : ''}`}
-            onClick={() => actions.setView('list')}>List</button>
+            onClick={() => actions.setView('list')}>{t('list', lang)}</button>
         </div>
       </div>
     </div>

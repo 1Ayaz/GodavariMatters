@@ -2,9 +2,11 @@ import { useMemo } from 'react'
 import { useApp } from '../lib/store'
 import { detectJurisdiction, generateWhatsAppPayload, generateShareText } from '../lib/jurisdiction'
 import BlameTree from './BlameTree'
+import { t } from '../lib/i18n'
 
 export default function DetailSheet() {
   const { state, actions } = useApp()
+  const lang = state.lang || 'en'
   const report = state.selectedReport
 
   const jurisdiction = useMemo(() => {
@@ -17,7 +19,7 @@ export default function DetailSheet() {
   const isResolved = report.status === 'resolved'
   const daysAgo = Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000))
   const isUrban = jurisdiction?.type === 'urban'
-  const complaintLabel = isUrban ? 'File RMC Complaint' : 'File Meekosam Complaint'
+  const complaintLabel = isUrban ? t('file_complaint', lang) : t('meekosam', lang)
 
   const handleSeen = async () => {
     await actions.incrementSeen(report.id)
@@ -46,9 +48,9 @@ export default function DetailSheet() {
         <div className="sheet-header">
           <div>
             <div className="detail-badges">
-              <span className={`severity-badge ${report.severity}`}>{report.severity.toUpperCase()}</span>
+              <span className={`severity-badge ${report.severity}`}>{t(report.severity, lang).toUpperCase()}</span>
               <span className={`status-badge${isResolved ? ' resolved' : ''}`}>
-                {isResolved ? 'Resolved' : 'Unresolved'}
+                {isResolved ? t('resolved', lang) : t('unresolved', lang)}
               </span>
             </div>
             <h2>{report.assigned_area || 'Unknown Area'}</h2>
@@ -70,7 +72,7 @@ export default function DetailSheet() {
           <div className="detail-photo-wrap">
             <img src={report.image_url} alt="Report" className="detail-photo" />
             <button className="seen-btn" onClick={handleSeen}>
-              I've seen this {report.seen_count > 0 && `(${report.seen_count})`}
+              {t('ive_seen_this', lang)} {report.seen_count > 0 && `(${report.seen_count})`}
             </button>
           </div>
 
@@ -78,15 +80,21 @@ export default function DetailSheet() {
           <div className="detail-stats">
             <div className="dstat">
               <span className="dstat-num">{report.seen_count || 1}</span>
-              <span className="dstat-label">Reports</span>
+              <span className="dstat-label">{t('reports_count', lang)}</span>
             </div>
             <div className="dstat">
               <span className="dstat-num">{daysAgo}</span>
-              <span className="dstat-label">Days</span>
+              <span className="dstat-label">{t('days', lang)}</span>
             </div>
             <div className="dstat">
-              <span className="dstat-num monospace">{report.waste_type}</span>
-              <span className="dstat-label">Waste Type</span>
+              <span className="dstat-num monospace">
+                {['minor', 'moderate', 'severe', 'critical'].includes(report.waste_type) 
+                  ? t(report.waste_type, lang) 
+                  : (t(`wt_${report.waste_type.toLowerCase().replace(/[^a-z0-9]/g, '_')}`, lang) === `wt_${report.waste_type.toLowerCase().replace(/[^a-z0-9]/g, '_')}` 
+                      ? report.waste_type 
+                      : t(`wt_${report.waste_type.toLowerCase().replace(/[^a-z0-9]/g, '_')}`, lang))}
+              </span>
+              <span className="dstat-label">{t('waste_type', lang)}</span>
             </div>
           </div>
 
@@ -98,7 +106,7 @@ export default function DetailSheet() {
           />
 
           <p className="report-time">
-            Reported <strong>{daysAgo === 1 ? 'Today' : `${daysAgo} days ago`}</strong> · {(report.seen_count || 0) + 1} citizen(s) reported
+            {t('reported', lang)} <strong>{daysAgo === 1 ? t('today', lang) : `${daysAgo} ${t('days_ago', lang)}`}</strong> · {(report.seen_count || 0) + 1} {t('citizens_reported', lang)}
           </p>
 
           {/* Action buttons */}
@@ -109,10 +117,10 @@ export default function DetailSheet() {
           {!isResolved && (
             <button className="action-btn cleaned-btn" onClick={() => actions.showCleanedForm(true)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              It is Cleaned Up — Verify
+              {t('verify_cleaned', lang)}
             </button>
           )}
-          <p className="anon-badge">All reports are anonymous</p>
+          <p className="anon-badge">{t('anonymous', lang)}</p>
         </div>
       </div>
     </div>

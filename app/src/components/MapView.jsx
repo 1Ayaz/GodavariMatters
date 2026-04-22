@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap } from '
 import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
+import { t } from '../lib/i18n'
 
 // Fix Leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl
@@ -296,6 +297,7 @@ export default function MapView() {
 
   const totalActive = state.reports.filter(r => r.status !== 'resolved').length
   const totalReports = state.reports.length
+  const lang = state.lang || 'en'
 
   if (state.activeView !== 'map') return null
 
@@ -332,11 +334,11 @@ export default function MapView() {
       <div className="map-stats-badges">
         <div className="map-badge badge-active">
           <span className="badge-num">{totalActive}</span>
-          <span className="badge-label">Active</span>
+          <span className="badge-label">{t('active_reports', lang)}</span>
         </div>
         <div className="map-badge badge-total">
           <span className="badge-num">{totalReports}</span>
-          <span className="badge-label">Reports</span>
+          <span className="badge-label">{t('total_reports', lang)}</span>
         </div>
       </div>
 
@@ -346,13 +348,13 @@ export default function MapView() {
           <div className="mip-indicator" />
           <div className="mip-content">
             <div className="mip-name">{infoData.name}</div>
-            <div className="mip-meta">{infoData.isUrban ? 'Sachivalayam · Urban' : 'Rural'}</div>
+            <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
             <div className="mip-count">
-              <span className="mip-count-num">{infoData.count}</span> report{infoData.count !== 1 ? 's' : ''}
+              <span className="mip-count-num">{infoData.count}</span> {infoData.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}
             </div>
             {selectedWard && (
               <div className="mip-actions">
-                <button className="mip-btn" onClick={handleViewReports}>View Reports →</button>
+                <button className="mip-btn" onClick={handleViewReports}>{t('view_reports', lang)}</button>
                 <button className="mip-dismiss" onClick={() => setSelectedWard(null)}>✕</button>
               </div>
             )}
