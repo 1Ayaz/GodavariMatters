@@ -23,7 +23,8 @@ function AppContent() {
 
       switch (e.key) {
         case 'r': case 'R':
-          if (!e.ctrlKey && !e.metaKey) actions.showReportForm(true)
+          // Only allow report shortcut on mobile
+          if (!e.ctrlKey && !e.metaKey && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) actions.showReportForm(true)
           break
         case 'Escape':
           actions.showReportForm(false)

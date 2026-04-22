@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../lib/store'
 
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
 const SEVERITIES = [
   { value: 'minor', label: 'Minor', desc: 'A few bags or scattered litter — fits in a small area (under 1m²)' },
   { value: 'moderate', label: 'Moderate', desc: 'Noticeable heap — roughly the size of an auto-rickshaw (1–5m²)' },
@@ -74,6 +78,11 @@ export default function ReportSheet() {
   }
 
   if (!state.showReportForm) return null
+
+  // SECURITY: Only allow reporting from mobile devices with cameras
+  if (!isMobileDevice()) {
+    return null
+  }
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.showReportForm(false)}>
