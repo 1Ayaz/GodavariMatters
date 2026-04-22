@@ -66,52 +66,97 @@ function checkDuplicateGPS(lat, lng) {
 }
 
 /**
- * Upload a report image to Supabase Storage.
- * Strips EXIF data by re-encoding through canvas before upload.
+ * Upload a report image.
+ * Priority: Cloudinary (25GB free) > Supabase Storage (1GB free) > local blob
+ * Images are aggressively compressed: 800px max, 55% JPEG quality (~40-60KB each)
  */
 export async function uploadImage(file) {
   // Security validations
   validateFile(file)
   
-  if (!supabase) return { url: URL.createObjectURL(file), isLocal: true }
-
-  // Strip EXIF by re-encoding through canvas
-  const stripped = await stripExif(file)
-  const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
-
-  const { data, error } = await supabase.storage
-    .from('pollution_snaps')
-    .upload(fileName, stripped, { contentType: 'image/jpeg', upsert: false })
-
-  if (error) throw error
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('pollution_snaps')
-    .getPublicUrl(fileName)
-
-  return { url: publicUrl, isLocal: false }
+  // Compress aggressively to save storage
+  const compressed = await compressImage(file)
+  
+  // Try Cloudinary first (25GB free tier vs Supabase's 1GB)
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+  
+  if (cloudName && uploadPreset) {
+    try {
+      const formData = new FormData()
+      formData.append('file', compressed)
+      formData.append('upload_preset', uploadPreset)
+      formData.append('folder', 'godavarimatters')
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!res.ok) throw new Error('Cloudinary upload failed')
+      const data = await res.json()
+      return { url: data.secure_url, isLocal: false }
+    } catch (e) {
+      console.warn('Cloudinary upload failed, falling back:', e)
+    }
+  }
+  
+  // Fallback: Supabase Storage
+  if (supabase) {
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
+    const { data, error } = await supabase.storage
+      .from('pollution_snaps')
+      .upload(fileName, compressed, { contentType: 'image/jpeg', upsert: false })
+    
+    if (error) throw error
+    
+    const { data: { publicUrl } } = supabase.storage
+      .from('pollution_snaps')
+      .getPublicUrl(fileName)
+    
+    return { url: publicUrl, isLocal: false }
+  }
+  
+  // Last resort: local blob URL (demo mode)
+  return { url: URL.createObjectURL(compressed), isLocal: true }
 }
 
 /**
- * Strip EXIF metadata by drawing image to canvas and re-exporting as JPEG.
- * This is the "Ghost Ledger" EXIF wipe — no device info leaks.
+ * Aggressively compress image for minimal storage usage.
+ * 800px max dimension, 55% JPEG quality → typically 40-60KB per photo.
+ * Also strips all EXIF metadata for privacy.
  */
-function stripExif(file) {
-  return new Promise((resolve) => {
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      // Cap at 1200px to save bandwidth
-      const max = 1200
+      const MAX_DIM = 800 // Aggressive: was 1200
       let w = img.width, h = img.height
-      if (w > max) { h = (max / w) * h; w = max }
-      if (h > max) { w = (max / h) * w; h = max }
+      
+      if (w > h) {
+        if (w > MAX_DIM) { h = Math.round((MAX_DIM / w) * h); w = MAX_DIM }
+      } else {
+        if (h > MAX_DIM) { w = Math.round((MAX_DIM / h) * w); h = MAX_DIM }
+      }
+      
       canvas.width = w
       canvas.height = h
       const ctx = canvas.getContext('2d')
       ctx.drawImage(img, 0, 0, w, h)
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85)
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob)
+          } else {
+            reject(new Error('Image compression failed'))
+          }
+        },
+        'image/jpeg',
+        0.55 // Aggressive quality: was 0.85 → saves ~70% storage
+      )
     }
+    img.onerror = () => reject(new Error('Failed to load image'))
     img.src = URL.createObjectURL(file)
   })
 }
