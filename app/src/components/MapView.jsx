@@ -12,9 +12,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// Tight zoom on RJY urban core
-const RJY_CENTER = [17.003, 81.800]
-const RJY_ZOOM = 14
+// Tight zoom on RJY exact center
+const RJY_CENTER = [16.997, 81.793]
+const RJY_ZOOM = 13
 
 const SEVERITY_COLORS = {
   minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
@@ -71,12 +71,17 @@ function WardBubbles({ boundaries, reportsByArea }) {
     if (count === 0) return null
 
     const center = getCentroid(feature)
-    const size = Math.max(28, Math.min(52, 24 + count * 3))
+    // Aggressive scaling for visual impact
+    const baseSize = 24
+    let size = baseSize
+    if (count > 0) size = Math.min(80, baseSize + (count * 6))
+    
     const isHot = count >= 5
+    const isCritical = count >= 10
 
     const icon = L.divIcon({
       className: '',
-      html: `<div class="ward-bubble has-reports ${isHot ? 'hot' : ''}" style="width:${size}px;height:${size}px;font-size:${count > 99 ? 11 : 13}px">
+      html: `<div class="ward-bubble has-reports ${isHot ? 'hot' : ''} ${isCritical ? 'critical' : ''}" style="width:${size}px;height:${size}px;font-size:${size > 40 ? 18 : 13}px">
         ${count}
       </div>`,
       iconSize: [size, size],
@@ -90,7 +95,7 @@ function WardBubbles({ boundaries, reportsByArea }) {
 }
 
 // ── Interactive boundary layer with hover/click ──
-function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
+function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits }) {
   const [geojson, setGeojson] = useState(null)
   const hoveredRef = useRef(null)
 
@@ -98,29 +103,35 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
 
-  // NammaKasa style: nearly invisible by default, only highlight on interaction
-  const defaultUrbanStyle = {
-    color: 'rgba(255,255,255,0.18)',
-    weight: 0.8,
-    opacity: 1,
-    fillColor: 'transparent',
-    fillOpacity: 0,
-  }
+  // Choropleth heatmap style
+  const getUrbanStyle = useCallback((feature) => {
+    const count = reportsByArea?.[feature.properties.name] || 0
+    let fillOpacity = 0
+    if (count > 0) fillOpacity = Math.min(0.7, 0.05 + (count * 0.05))
+    
+    return {
+      color: count > 0 ? '#E8390E' : 'rgba(255,255,255,0.18)',
+      weight: count > 0 ? 1.5 : 0.8,
+      opacity: count > 0 ? 0.8 : 1,
+      fillColor: '#E8390E',
+      fillOpacity: fillOpacity,
+    }
+  }, [reportsByArea])
 
   const hoverUrbanStyle = {
     color: '#E8390E',
     weight: 2,
-    opacity: 0.9,
+    opacity: 1,
     fillColor: '#E8390E',
-    fillOpacity: 0.12,
+    fillOpacity: 0.3,
   }
 
   const selectedUrbanStyle = {
     color: '#E8390E',
-    weight: 2.5,
+    weight: 3,
     opacity: 1,
     fillColor: '#E8390E',
-    fillOpacity: 0.22,
+    fillOpacity: 0.4,
   }
 
   // Rural: slightly visible so Rajahmundry Rural area is distinct from empty map
@@ -140,7 +151,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
       mouseover: (e) => {
         const l = e.target
         if (hoveredRef.current && hoveredRef.current !== l) {
-          hoveredRef.current.setStyle(defaultUrbanStyle)
+          hoveredRef.current.setStyle(getUrbanStyle(hoveredRef.current.feature))
         }
         l.setStyle(hoverUrbanStyle)
         l.bringToFront()
@@ -148,7 +159,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
         onHover?.({ name, isUrban: true, count, code: feature.properties.code })
       },
       mouseout: (e) => {
-        e.target.setStyle(defaultUrbanStyle)
+        e.target.setStyle(getUrbanStyle(feature))
         hoveredRef.current = null
         onHover?.(null)
       },
@@ -169,12 +180,24 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
     }
   }, [geojson])
 
+  // City Limits boundary style (Dashed red line)
+  const cityLimitStyle = {
+    color: '#E8390E',
+    weight: 3,
+    dashArray: '10, 15',
+    opacity: 0.8,
+    fillColor: 'transparent',
+    fillOpacity: 0,
+    interactive: false
+  }
+
   if (!rural || !urban) return null
 
   return (
     <>
       <GeoJSON key="rural" data={rural} style={() => ruralStyle} />
-      <GeoJSON key="urban" data={urban} style={() => defaultUrbanStyle} onEachFeature={onEachUrban} />
+      <GeoJSON key="urban" data={urban} style={getUrbanStyle} onEachFeature={onEachUrban} />
+      {cityLimits && <GeoJSON key="city_limits" data={cityLimits} style={() => cityLimitStyle} />}
     </>
   )
 }
@@ -201,11 +224,13 @@ function ReportMarkers() {
 export default function MapView() {
   const { state, actions } = useApp()
   const [boundaries, setBoundaries] = useState(null)
+  const [cityLimits, setCityLimits] = useState(null)
   const [hoveredArea, setHoveredArea] = useState(null)
   const [selectedWard, setSelectedWard] = useState(null)
 
   useEffect(() => {
     loadData().then(({ boundaries }) => setBoundaries(boundaries))
+    fetch('/city_limits.geojson').then(r => r.json()).then(setCityLimits).catch(() => {})
   }, [])
 
   const reportsByArea = useMemo(() => {
@@ -245,6 +270,7 @@ export default function MapView() {
           onHover={setHoveredArea}
           onSelect={setSelectedWard}
           reportsByArea={reportsByArea}
+          cityLimits={cityLimits}
         />
         <WardBubbles boundaries={boundaries} reportsByArea={reportsByArea} />
         <ReportMarkers />
