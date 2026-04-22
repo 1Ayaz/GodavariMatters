@@ -194,8 +194,41 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         L.DomEvent.stopPropagation(e)
         const l = e.target
         l.setStyle(selectedUrbanStyle)
+        
+        // Find reports in this ward
+        const reports = state.reports.filter(r => r.assigned_area === name)
+        const recent = reports.slice(0, 3)
+        
+        let listHtml = recent.length > 0 
+          ? recent.map(r => `
+            <div style="border-bottom: 1px solid #eee; padding: 6px 0;">
+              <div style="font-weight: 800; font-size: 11px;">${r.waste_type}</div>
+              <div style="font-size: 9px; color: #666;">${r.landmark}</div>
+            </div>
+          `).join('')
+          : '<p style="font-size: 11px; color: #999;">No active reports in this ward.</p>'
+        
+        if (reports.length > 3) {
+          listHtml += `<div style="font-size: 10px; color: #E8390E; font-weight: 800; margin-top: 6px;">+ ${reports.length - 3} more reports...</div>`
+        }
+
+        const popupContent = `
+          <div style="min-width: 180px;">
+            <div style="font-weight: 900; font-size: 14px; margin-bottom: 8px;">${name}</div>
+            ${listHtml}
+            <button onclick="window.dispatchEvent(new CustomEvent('viewReportsByWard', {detail: '${name}'}))" 
+              style="width:100%; margin-top:10px; background:#E8390E; color:#fff; border:none; border-radius:6px; padding:8px; font-weight:700; cursor:pointer;">
+              View All Details
+            </button>
+          </div>
+        `
+        
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(popupContent)
+          .openOn(map)
+
         onSelect?.({ name, isUrban: true, count, code: feature.properties.code })
-        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
       },
     })
   }, [reportsByArea, onHover, onSelect, getUrbanStyle, map])
@@ -226,8 +259,41 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         L.DomEvent.stopPropagation(e)
         const l = e.target
         l.setStyle(selectedRuralStyle)
+        
+        // Find reports in this ward
+        const reports = state.reports.filter(r => r.assigned_area === name)
+        const recent = reports.slice(0, 3)
+        
+        let listHtml = recent.length > 0 
+          ? recent.map(r => `
+            <div style="border-bottom: 1px solid #eee; padding: 6px 0;">
+              <div style="font-weight: 800; font-size: 11px;">${r.waste_type}</div>
+              <div style="font-size: 9px; color: #666;">${r.landmark}</div>
+            </div>
+          `).join('')
+          : '<p style="font-size: 11px; color: #999;">No active reports in this ward.</p>'
+        
+        if (reports.length > 3) {
+          listHtml += `<div style="font-size: 10px; color: #E8390E; font-weight: 800; margin-top: 6px;">+ ${reports.length - 3} more reports...</div>`
+        }
+
+        const popupContent = `
+          <div style="min-width: 180px;">
+            <div style="font-weight: 900; font-size: 14px; margin-bottom: 8px;">${name}</div>
+            ${listHtml}
+            <button onclick="window.dispatchEvent(new CustomEvent('viewReportsByWard', {detail: '${name}'}))" 
+              style="width:100%; margin-top:10px; background:#E8390E; color:#fff; border:none; border-radius:6px; padding:8px; font-weight:700; cursor:pointer;">
+              View All Details
+            </button>
+          </div>
+        `
+        
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(popupContent)
+          .openOn(map)
+
         onSelect?.({ name, isUrban: false, count, code: feature.properties.code })
-        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
       },
     })
   }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle, map])
@@ -276,24 +342,25 @@ function ReportMarkers() {
         pathOptions={{ color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.9 }}
       >
         <Popup>
-          <div style={{ padding: '2px', minWidth: '180px' }}>
+          <div style={{ padding: '0', minWidth: '200px', overflow: 'hidden', borderRadius: '12px' }}>
             {report.image_url && (
-              <img src={report.image_url} alt="Report" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px', marginBottom: '8px' }} />
+              <img src={report.image_url} alt="Report" style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
             )}
-            <h4 style={{ margin: '0 0 4px', fontSize: '14px' }}>{report.waste_type}</h4>
-            <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{report.landmark}</p>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <span style={{ fontSize: '10px', background: color, color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                {report.severity}
-              </span>
-              {isResolved && <span style={{ fontSize: '10px', background: '#16a34a', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>RESOLVED</span>}
+            <div style={{ padding: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>{report.waste_type}</h4>
+                <span style={{ fontSize: '10px', background: color, color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                  {report.severity?.toUpperCase()}
+                </span>
+              </div>
+              <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#666', lineHeight: '1.4' }}>{report.landmark}</p>
+              <button 
+                onClick={() => actions.selectReport(report)} 
+                style={{ width: '100%', padding: '10px', background: '#111', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px' }}
+              >
+                View Full Evidence →
+              </button>
             </div>
-            <button 
-              onClick={() => actions.selectReport(report)} 
-              style={{ width: '100%', padding: '8px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, marginTop: '10px' }}
-            >
-              Open Full Details
-            </button>
           </div>
         </Popup>
       </CircleMarker>

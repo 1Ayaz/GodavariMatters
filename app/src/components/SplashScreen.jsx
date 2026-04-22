@@ -35,31 +35,32 @@ export default function SplashScreen({ onDismiss }) {
           <span className="splash-highlight">Drowning in Waste.</span>
         </h1>
         <p className="splash-desc">
-          We pay for a clean city. Our Property Tax includes dedicated charges for drainage and waste.
+          ₹574 Crore Budget. ₹88 Crore for Godavari. <br />
+          Where is the clean city we were promised?
         </p>
 
         <div className="splash-data-grid">
           <div className="splash-data-card">
-            <span className="sdc-label">Total RMC Budget</span>
-            <span className="sdc-value sdc-accent">₹574.6 Crore</span>
+            <span className="sdc-label">RMC Annual Budget</span>
+            <span className="sdc-value sdc-accent">₹574.6 Cr</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Tax Collection Rate</span>
-            <span className="sdc-value">82% (2025-26)</span>
+            <span className="sdc-label">Godavari Project</span>
+            <span className="sdc-value">₹88.4 Cr</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Sanitation Ops</span>
-            <span className="sdc-value sdc-accent">₹3.0 Cr/Month</span>
+            <span className="sdc-label">Monthly Ops Cost</span>
+            <span className="sdc-value sdc-accent">₹3.0 Cr</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Hidden Taxes</span>
-            <span className="sdc-value">Drainage & Waste</span>
+            <span className="sdc-label">Tax Collection</span>
+            <span className="sdc-value">82%+</span>
           </div>
         </div>
 
         <p className="splash-sub">
-          The budget is spent. Taxes are collected. <br />
-          Where is the service? Hold responsible officials accountable.
+          Stop ignoring the garbage. Start tracking the accountability. <br />
+          Hold your Sachivalayam officials responsible today.
         </p>
         <div className="splash-cta">{t('splash_tap', lang)}</div>
       </div>
