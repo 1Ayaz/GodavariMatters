@@ -346,15 +346,24 @@ export default function MapView() {
       {infoData && (
         <div className={`map-info-panel mip-light${selectedWard ? ' mip-selected' : ''}`}>
           <div className="mip-indicator" />
-          <div className="mip-content">
-            <div className="mip-name">{infoData.name}</div>
-            <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
-            <div className="mip-count">
-              <span className="mip-count-num">{infoData.count}</span> {infoData.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}
+          <div className="mip-content" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div className="mip-name">{infoData.name}</div>
+                <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
+              </div>
+              <div className="mip-count" style={{ marginTop: 0, textAlign: 'right' }}>
+                <span className="mip-count-num" style={{ fontSize: '18px' }}>{infoData.count}</span>
+                <div style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.8 }}>{infoData.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}</div>
+              </div>
             </div>
+            
             {selectedWard && (
-              <div className="mip-actions">
-                <button className="mip-btn" onClick={handleViewReports}>{t('view_reports', lang)}</button>
+              <div className="mip-actions" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <button className="mip-btn" onClick={handleViewReports} style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px' }}>
+                  {t('view_reports', lang)}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                </button>
                 <button className="mip-dismiss" onClick={() => setSelectedWard(null)}>✕</button>
               </div>
             )}
