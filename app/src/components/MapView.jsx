@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { useApp } from '../lib/store'
@@ -12,6 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
+// Tight zoom on RJY urban core
 const RJY_CENTER = [17.003, 81.800]
 const RJY_ZOOM = 14
 
@@ -25,13 +26,13 @@ function MapControls() {
   const { actions } = useApp()
   return (
     <div className="map-controls">
-      <button className="map-ctrl-btn" onClick={() => map.zoomIn()}>
+      <button className="map-ctrl-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button className="map-ctrl-btn" onClick={() => map.zoomOut()}>
+      <button className="map-ctrl-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button className="map-ctrl-btn gps-btn" onClick={() => {
+      <button className="map-ctrl-btn gps-btn" aria-label="My location" onClick={() => {
         if (!navigator.geolocation) return alert('GPS not available')
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -58,8 +59,8 @@ function getCentroid(feature) {
   return [sum[1] / n, sum[0] / n] // [lat, lng]
 }
 
-// ── NammaKasa-style ward count bubbles ──
-function WardBubbles({ boundaries, reportsByArea, onHover, onSelect }) {
+// ── Ward count bubbles (only when complaints > 0) ──
+function WardBubbles({ boundaries, reportsByArea }) {
   if (!boundaries) return null
 
   const urbanFeatures = boundaries.features.filter(f => f.properties.type === 'urban_sachivalayam')
@@ -67,59 +68,96 @@ function WardBubbles({ boundaries, reportsByArea, onHover, onSelect }) {
   return urbanFeatures.map((feature) => {
     const name = feature.properties.name || 'Unknown'
     const count = reportsByArea[name] || 0
-    const center = getCentroid(feature)
+    if (count === 0) return null
 
-    // Bubble size scales with count
-    const size = count > 0 ? Math.max(28, Math.min(52, 24 + count * 3)) : 22
-    const isHot = count >= 5 // "hot" ward
+    const center = getCentroid(feature)
+    const size = Math.max(28, Math.min(52, 24 + count * 3))
+    const isHot = count >= 5
 
     const icon = L.divIcon({
       className: '',
-      html: `<div class="ward-bubble ${count > 0 ? 'has-reports' : ''} ${isHot ? 'hot' : ''}" style="width:${size}px;height:${size}px;font-size:${count > 99 ? 11 : 13}px">
-        ${count > 0 ? count : ''}
+      html: `<div class="ward-bubble has-reports ${isHot ? 'hot' : ''}" style="width:${size}px;height:${size}px;font-size:${count > 99 ? 11 : 13}px">
+        ${count}
       </div>`,
       iconSize: [size, size],
       iconAnchor: [size / 2, size / 2],
     })
 
     return (
-      <Marker
-        key={name}
-        position={center}
-        icon={icon}
-        eventHandlers={{
-          mouseover: () => onHover?.({ name, isUrban: true, count }),
-          mouseout: () => onHover?.(null),
-          click: () => onSelect?.({ name, isUrban: true, count, code: feature.properties.code }),
-        }}
-      />
+      <Marker key={name} position={center} icon={icon} />
     )
   })
 }
 
-// ── Polygon borders (subtle, NammaKasa-style) ──
-function BoundaryLayer() {
+// ── Interactive boundary layer with hover/click ──
+function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
   const [geojson, setGeojson] = useState(null)
+  const hoveredRef = useRef(null)
 
   useEffect(() => {
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
 
-  const urbanStyle = useCallback(() => ({
+  const defaultUrbanStyle = {
     color: '#E8390E',
-    weight: 0.8,
-    opacity: 0.3,
+    weight: 1,
+    opacity: 0.5,
     fillColor: '#E8390E',
-    fillOpacity: 0.02,
-  }), [])
+    fillOpacity: 0.04,
+  }
 
-  const ruralStyle = useCallback(() => ({
-    color: '#94a3b8',
-    weight: 0.4,
-    opacity: 0.15,
-    fillColor: '#94a3b8',
+  const hoverUrbanStyle = {
+    color: '#E8390E',
+    weight: 2.5,
+    opacity: 1,
+    fillColor: '#E8390E',
+    fillOpacity: 0.15,
+  }
+
+  const selectedUrbanStyle = {
+    color: '#fff',
+    weight: 2.5,
+    opacity: 1,
+    fillColor: '#E8390E',
+    fillOpacity: 0.25,
+  }
+
+  const ruralStyle = {
+    color: 'rgba(255,255,255,0.08)',
+    weight: 0.3,
+    opacity: 0.2,
+    fillColor: '#fff',
     fillOpacity: 0.01,
-  }), [])
+  }
+
+  const onEachUrban = useCallback((feature, layer) => {
+    const name = feature.properties.name || 'Unknown'
+    const count = reportsByArea?.[name] || 0
+
+    layer.on({
+      mouseover: (e) => {
+        const l = e.target
+        if (hoveredRef.current && hoveredRef.current !== l) {
+          hoveredRef.current.setStyle(defaultUrbanStyle)
+        }
+        l.setStyle(hoverUrbanStyle)
+        l.bringToFront()
+        hoveredRef.current = l
+        onHover?.({ name, isUrban: true, count, code: feature.properties.code })
+      },
+      mouseout: (e) => {
+        e.target.setStyle(defaultUrbanStyle)
+        hoveredRef.current = null
+        onHover?.(null)
+      },
+      click: (e) => {
+        L.DomEvent.stopPropagation(e)
+        const l = e.target
+        l.setStyle(selectedUrbanStyle)
+        onSelect?.({ name, isUrban: true, count, code: feature.properties.code })
+      },
+    })
+  }, [reportsByArea, onHover, onSelect])
 
   if (!geojson) return null
 
@@ -128,8 +166,8 @@ function BoundaryLayer() {
 
   return (
     <>
-      <GeoJSON data={rural} style={ruralStyle} />
-      <GeoJSON data={urban} style={urbanStyle} />
+      <GeoJSON key="rural" data={rural} style={() => ruralStyle} />
+      <GeoJSON key="urban" data={urban} style={() => defaultUrbanStyle} onEachFeature={onEachUrban} />
     </>
   )
 }
@@ -184,23 +222,29 @@ export default function MapView() {
     if (selectedWard) { actions.setView('list'); setSelectedWard(null) }
   }
 
+  const handleMapClick = () => {
+    if (selectedWard) setSelectedWard(null)
+  }
+
   return (
     <div className="view-panel map-panel active">
       <MapContainer center={RJY_CENTER} zoom={RJY_ZOOM} minZoom={11} maxZoom={19}
-        className="map-container" zoomControl={false} attributionControl={false}>
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
-        <BoundaryLayer />
-        <WardBubbles
-          boundaries={boundaries}
-          reportsByArea={reportsByArea}
+        className="map-container" zoomControl={false} attributionControl={false}
+        whenReady={(e) => {
+          e.target.on('click', handleMapClick)
+        }}>
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
+        <InteractiveBoundaryLayer
           onHover={setHoveredArea}
           onSelect={setSelectedWard}
+          reportsByArea={reportsByArea}
         />
+        <WardBubbles boundaries={boundaries} reportsByArea={reportsByArea} />
         <ReportMarkers />
         <MapControls />
       </MapContainer>
 
-      {/* NammaKasa-style inline stats badges */}
+      {/* Inline stats badges */}
       <div className="map-stats-badges">
         <div className="map-badge badge-active">
           <span className="badge-num">{totalActive}</span>
