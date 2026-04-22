@@ -12,9 +12,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// Tight zoom on RJY exact center
-const RJY_CENTER = [16.997, 81.793]
-const RJY_ZOOM = 13
+// Center covering both Urban and Rural Rajahmundry
+const RJY_CENTER = [17.013, 81.796]
+const RJY_ZOOM = 12
 
 const SEVERITY_COLORS = {
   minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
@@ -63,9 +63,7 @@ function getCentroid(feature) {
 function WardBubbles({ boundaries, reportsByArea }) {
   if (!boundaries) return null
 
-  const urbanFeatures = boundaries.features.filter(f => f.properties.type === 'urban_sachivalayam')
-
-  return urbanFeatures.map((feature) => {
+  return boundaries.features.map((feature) => {
     const name = feature.properties.name || 'Unknown'
     const count = reportsByArea[name] || 0
     if (count === 0) return null
@@ -134,13 +132,35 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     fillOpacity: 0.4,
   }
 
-  // Rural: slightly visible so Rajahmundry Rural area is distinct from empty map
-  const ruralStyle = {
-    color: 'rgba(100,180,200,0.22)',
-    weight: 0.6,
+  // ── Rural Styles ──
+  const getRuralStyle = useCallback((feature) => {
+    const count = reportsByArea?.[feature.properties.name] || 0
+    let fillOpacity = 0.05
+    if (count > 0) fillOpacity = Math.min(0.5, 0.1 + (count * 0.05))
+    
+    return {
+      color: '#0D9488', // Teal accent
+      weight: count > 0 ? 1.5 : 0.8,
+      opacity: count > 0 ? 0.9 : 0.4,
+      fillColor: '#0D9488',
+      fillOpacity: fillOpacity,
+    }
+  }, [reportsByArea])
+
+  const hoverRuralStyle = {
+    color: '#14B8A6',
+    weight: 2,
     opacity: 1,
-    fillColor: 'rgba(100,180,200,0.03)',
-    fillOpacity: 1,
+    fillColor: '#14B8A6',
+    fillOpacity: 0.2,
+  }
+
+  const selectedRuralStyle = {
+    color: '#14B8A6',
+    weight: 3,
+    opacity: 1,
+    fillColor: '#14B8A6',
+    fillOpacity: 0.35,
   }
 
   const onEachUrban = useCallback((feature, layer) => {
@@ -170,7 +190,38 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         onSelect?.({ name, isUrban: true, count, code: feature.properties.code })
       },
     })
-  }, [reportsByArea, onHover, onSelect])
+  }, [reportsByArea, onHover, onSelect, getUrbanStyle])
+
+  const onEachRural = useCallback((feature, layer) => {
+    const name = feature.properties.name || 'Unknown'
+    const count = reportsByArea?.[name] || 0
+
+    layer.on({
+      mouseover: (e) => {
+        const l = e.target
+        if (hoveredRef.current && hoveredRef.current !== l) {
+          // Restore previous hovered layer style
+          const isUrb = hoveredRef.current.feature.properties.type === 'urban_sachivalayam'
+          hoveredRef.current.setStyle(isUrb ? getUrbanStyle(hoveredRef.current.feature) : getRuralStyle(hoveredRef.current.feature))
+        }
+        l.setStyle(hoverRuralStyle)
+        l.bringToFront()
+        hoveredRef.current = l
+        onHover?.({ name, isUrban: false, count, code: feature.properties.code })
+      },
+      mouseout: (e) => {
+        e.target.setStyle(getRuralStyle(feature))
+        hoveredRef.current = null
+        onHover?.(null)
+      },
+      click: (e) => {
+        L.DomEvent.stopPropagation(e)
+        const l = e.target
+        l.setStyle(selectedRuralStyle)
+        onSelect?.({ name, isUrban: false, count, code: feature.properties.code })
+      },
+    })
+  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle])
 
   const { rural, urban } = useMemo(() => {
     if (!geojson) return { rural: null, urban: null }
@@ -195,7 +246,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   return (
     <>
-      <GeoJSON key="rural" data={rural} style={() => ruralStyle} />
+      <GeoJSON key="rural" data={rural} style={getRuralStyle} onEachFeature={onEachRural} />
       <GeoJSON key="urban" data={urban} style={getUrbanStyle} onEachFeature={onEachUrban} />
       {cityLimits && <GeoJSON key="city_limits" data={cityLimits} style={() => cityLimitStyle} />}
     </>
