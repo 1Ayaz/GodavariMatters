@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AppProvider, useApp } from './lib/store'
 import SplashScreen from './components/SplashScreen'
 import TopBar from './components/TopBar'
@@ -13,6 +14,34 @@ import 'leaflet/dist/leaflet.css'
 
 function AppContent() {
   const { state, actions } = useApp()
+
+  // Keyboard shortcuts — accessibility & power-user feature
+  useEffect(() => {
+    const handler = (e) => {
+      // Don't fire shortcuts when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+
+      switch (e.key) {
+        case 'r': case 'R':
+          if (!e.ctrlKey && !e.metaKey) actions.showReportForm(true)
+          break
+        case 'Escape':
+          actions.showReportForm(false)
+          actions.showCleanedForm(false)
+          actions.selectReport(null)
+          actions.selectLeader(null)
+          break
+        case 'm': case 'M':
+          if (!e.ctrlKey) actions.setView('map')
+          break
+        case 'l': case 'L':
+          if (!e.ctrlKey) actions.setView('list')
+          break
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [actions])
 
   return (
     <>
@@ -39,3 +68,4 @@ export default function App() {
     </AppProvider>
   )
 }
+
