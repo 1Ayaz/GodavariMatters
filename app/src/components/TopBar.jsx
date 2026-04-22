@@ -22,8 +22,8 @@ export default function TopBar() {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <span className="brand">GodavariMatters<span className="brand-accent">!</span></span>
-        <span className="version">v1.0</span>
+        <span className="brand">Godavar<span className="brand-accent">!</span>Matters</span>
+        <span className="version">v1.1</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <button onClick={toggleLang} style={{

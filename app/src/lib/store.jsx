@@ -123,6 +123,10 @@ export function AppProvider({ children }) {
       // This will throw if rate limited, duplicate GPS, invalid file, etc.
       const { url } = await uploadImage(imageFile)
       const jurisdiction = detectJurisdiction(reportData.lat, reportData.lng)
+
+      if (!jurisdiction) {
+        throw new Error('This location is outside our operational boundary. Please report issues only within Rajamahendravaram (Urban & Rural).')
+      }
       
       const report = {
         lat: reportData.lat,

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
+import { detectJurisdiction } from '../lib/jurisdiction'
 
 function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -33,6 +34,7 @@ export default function ReportSheet() {
   const [location, setLocation] = useState(null)
   const [locStatus, setLocStatus] = useState('acquiring')
   const [submitting, setSubmitting] = useState(false)
+  const [isOutside, setIsOutside] = useState(false)
   const fileRef = useRef()
 
   // Get GPS on open
@@ -42,8 +44,16 @@ export default function ReportSheet() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-            setLocStatus('success')
+            const { latitude: lat, longitude: lng } = pos.coords
+            setLocation({ lat, lng })
+            const jur = detectJurisdiction(lat, lng)
+            if (jur) {
+              setLocStatus('success')
+              setIsOutside(false)
+            } else {
+              setLocStatus('error')
+              setIsOutside(true)
+            }
           },
           () => setLocStatus('error'),
           { enableHighAccuracy: true, timeout: 10000 }
@@ -66,7 +76,7 @@ export default function ReportSheet() {
     }
   }
 
-  const canSubmit = photo && landmark.trim() && location && !submitting
+  const canSubmit = photo && landmark.trim() && location && !submitting && !isOutside
 
   const handleSubmit = async () => {
     if (!canSubmit) return
@@ -117,13 +127,13 @@ export default function ReportSheet() {
           </div>
 
           {/* LOCATION */}
-          <div className={`location-box ${locStatus === 'success' ? 'success' : ''}`}>
+          <div className={`location-box ${locStatus === 'success' ? 'success' : isOutside ? 'error' : ''}`}>
             <div className="loc-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={locStatus === 'success' ? '#16a34a' : '#E8390E'} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
             </div>
             <div className="loc-text">
-              <strong>{locStatus === 'success' ? t('location_captured', lang) : locStatus === 'error' ? t('location_failed', lang) : t('location_acquiring', lang)}</strong>
-              <span>{locStatus === 'success' ? t('location_sub_ok', lang) : t('location_sub_wait', lang)}</span>
+              <strong>{locStatus === 'success' ? t('location_captured', lang) : isOutside ? 'OUTSIDE BOUNDARY' : locStatus === 'error' ? t('location_failed', lang) : t('location_acquiring', lang)}</strong>
+              <span>{locStatus === 'success' ? t('location_sub_ok', lang) : isOutside ? 'Reporting only allowed in Rajahmundry.' : t('location_sub_wait', lang)}</span>
             </div>
           </div>
 

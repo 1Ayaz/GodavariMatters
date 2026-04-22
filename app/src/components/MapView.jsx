@@ -375,8 +375,8 @@ export default function MapView() {
           <div className="mip-indicator" />
           <div className="mip-content" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div className="mip-name">{infoData.name}</div>
+              <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                <div className="mip-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{infoData.name}</div>
                 <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
               </div>
               <div className="mip-count" style={{ marginTop: 0, textAlign: 'right' }}>

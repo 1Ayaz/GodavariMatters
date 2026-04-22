@@ -93,19 +93,7 @@ export function detectJurisdiction(lat, lng) {
     }
   }
 
-  // Step 2: If no match, use nearest-neighbor (Haversine)
-  if (!matched) {
-    let minDist = Infinity
-    for (const feature of boundaryData.features) {
-      const [cLng, cLat] = getCentroid(feature)
-      const dist = haversineDistance(lat, lng, cLat, cLng)
-      if (dist < minDist) {
-        minDist = dist
-        matched = feature
-      }
-    }
-  }
-
+  // Step 2: No nearest-neighbor fallback — strict geofence
   if (!matched) return null
 
   const props = matched.properties
