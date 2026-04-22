@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
-import { getReports, submitReport as apiSubmit, incrementSeen as apiSeen, markResolved as apiResolve, uploadImage } from './supabase'
+import { supabase, getReports, submitReport as apiSubmit, incrementSeen as apiSeen, markResolved as apiResolve, uploadImage } from './supabase'
 import { loadData, detectJurisdiction } from './jurisdiction'
 
 const AppContext = createContext()
@@ -22,6 +22,7 @@ const initialState = {
   filterSeverity: 'all',
   filterStatus: 'all',
   selectedReport: null,
+  selectedWard: null,
   selectedLeader: null,
   showReportForm: false,
   showCleanedForm: false,
@@ -46,7 +47,9 @@ function reducer(state, action) {
     case 'SET_FILTER_STATUS':
       return { ...state, filterStatus: action.value }
     case 'SELECT_REPORT':
-      return { ...state, selectedReport: action.report }
+      return { ...state, selectedReport: action.report, selectedWard: null }
+    case 'SELECT_WARD':
+      return { ...state, selectedWard: action.ward, selectedReport: null }
     case 'SELECT_LEADER':
       return { ...state, selectedLeader: action.leader }
     case 'SHOW_REPORT_FORM':
@@ -132,6 +135,7 @@ export function AppProvider({ children }) {
       dispatch({ type: 'SET_LANG', lang })
     },
     selectReport: (report) => dispatch({ type: 'SELECT_REPORT', report }),
+    selectWard: (ward) => dispatch({ type: 'SELECT_WARD', ward }),
     selectLeader: (leader) => dispatch({ type: 'SELECT_LEADER', leader }),
     showReportForm: (show) => dispatch({ type: 'SHOW_REPORT_FORM', show }),
     showCleanedForm: (show) => dispatch({ type: 'SHOW_CLEANED_FORM', show }),

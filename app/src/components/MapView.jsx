@@ -300,20 +300,34 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     })
   }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle, map])
 
-  const { rural, urban } = useMemo(() => {
-    if (!geojson) return { rural: null, urban: null }
-    return {
-      rural: { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') },
-      urban: { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
-    }
+  const { rural, urban, unifiedCity } = useMemo(() => {
+    if (!geojson) return { rural: null, urban: null, unifiedCity: null }
+    const r = { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') }
+    const u = { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
+    
+    // Create unified city boundary using Turf
+    let unified = null
+    try {
+      if (u.features.length > 0) {
+        let base = u.features[0]
+        for (let i = 1; i < u.features.length; i++) {
+          try {
+            base = window.turf.union(base, u.features[i])
+          } catch (e) { /* skip problematic geoms */ }
+        }
+        unified = base
+      }
+    } catch (e) { console.warn('Turf union failed:', e) }
+
+    return { rural: r, urban: u, unifiedCity: unified }
   }, [geojson])
 
   // City Limits boundary style (Dashed red line)
   const cityLimitStyle = {
     color: '#E8390E',
-    weight: 3,
-    dashArray: '10, 15',
-    opacity: 0.8,
+    weight: 4,
+    dashArray: '12, 16',
+    opacity: 0.9,
     fillColor: 'transparent',
     fillOpacity: 0,
     interactive: false
@@ -325,7 +339,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     <>
       <GeoJSON key="rural" data={rural} style={getRuralStyle} onEachFeature={onEachRural} />
       <GeoJSON key="urban" data={urban} style={getUrbanStyle} onEachFeature={onEachUrban} />
-      {cityLimits && <GeoJSON key="city_limits" data={cityLimits} style={() => cityLimitStyle} />}
+      {unifiedCity && <GeoJSON key="city_limits" data={unifiedCity} style={() => cityLimitStyle} />}
     </>
   )
 }
@@ -343,35 +357,13 @@ function ReportMarkers() {
         center={[report.lat, report.lng]}
         radius={6}
         pathOptions={{ color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.9 }}
-      >
-        <Popup>
-          <div style={{ padding: '0', minWidth: '200px', overflow: 'hidden', borderRadius: '12px' }}>
-            {report.image_url && (
-              <img src={report.image_url} alt="Report" style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
-            )}
-            <div style={{ padding: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>{report.waste_type}</h4>
-                <span style={{ fontSize: '10px', background: color, color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                  {isResolved ? 'CLEANED' : isPending ? 'PENDING' : report.severity?.toUpperCase()}
-                </span>
-              </div>
-              <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#666', lineHeight: '1.4' }}>{report.landmark}</p>
-              {isPending && (
-                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', color: '#92400e', marginBottom: '10px' }}>
-                  🧹 A citizen reported this as cleaned. Admin review in progress.
-                </div>
-              )}
-              <button 
-                onClick={() => actions.selectReport(report)} 
-                style={{ width: '100%', padding: '10px', background: '#111', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px' }}
-              >
-                View Full Evidence →
-              </button>
-            </div>
-          </div>
-        </Popup>
-      </CircleMarker>
+        eventHandlers={{
+          click: (e) => {
+            L.DomEvent.stopPropagation(e)
+            actions.selectReport(report)
+          }
+        }}
+      />
     )
   })
 }
