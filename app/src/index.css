@@ -858,11 +858,13 @@ input { font-family: var(--font); }
 
 /* ────────────────────────── RESPONSIVE — Mobile First adjustments ────────────────────────── */
 @media (max-width: 767px) {
-  .topbar { padding: 12px 14px; height: 60px; box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
-  .brand { font-size: 20px; letter-spacing: -0.8px; }
+  .topbar { padding: 12px 14px; height: 64px; box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .brand { font-size: 21px; letter-spacing: -0.8px; }
   .version { font-size: 8px; padding: 1px 6px; }
-  .view-switcher { top: 60px; padding: 10px 14px 8px; border-top: none; }
-  .view-panel { top: 110px; bottom: 0; }
+  .view-switcher { top: 64px; padding: 12px 14px 10px; border-top: none; }
+  .view-panel { top: 120px; bottom: 0; }
+  .view-switcher { background: rgba(255,255,255,0.98); }
+  .map-stats-badges { top: 20px; left: 14px; }
   
   /* Floating pill info panel on mobile */
   .map-info-panel {
