@@ -185,7 +185,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         l.setStyle(hoverUrbanStyle)
         l.bringToFront()
         hoveredRef.current = l
-        onHover?.({ name, isUrban: true, count, code: feature.properties.code })
+        onHover?.({ name, isUrban: true, count, code: feature.properties.code, ...feature.properties })
       },
       mouseout: (e) => {
         e.target.setStyle(getUrbanStyle(feature))
@@ -197,43 +197,16 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedUrbanStyle)
         
-        // Find reports in this ward
-        const reports = state.reports.filter(r => r.assigned_area === name)
-        const recent = reports.slice(0, 3)
-        
-        let listHtml = recent.length > 0 
-          ? recent.map(r => `
-            <div style="border-bottom: 1px solid #eee; padding: 6px 0;">
-              <div style="font-weight: 800; font-size: 11px;">${r.waste_type}</div>
-              <div style="font-size: 9px; color: #666;">${r.landmark}</div>
-            </div>
-          `).join('')
-          : '<p style="font-size: 11px; color: #999;">No active reports in this ward.</p>'
-        
-        if (reports.length > 3) {
-          listHtml += `<div style="font-size: 10px; color: #E8390E; font-weight: 800; margin-top: 6px;">+ ${reports.length - 3} more reports...</div>`
-        }
-
-        const popupContent = `
-          <div style="min-width: 180px;">
-            <div style="font-weight: 900; font-size: 14px; margin-bottom: 8px;">${name}</div>
-            ${listHtml}
-            <button onclick="window.dispatchEvent(new CustomEvent('viewReportsByWard', {detail: '${name}'}))" 
-              style="width:100%; margin-top:10px; background:#E8390E; color:#fff; border:none; border-radius:6px; padding:8px; font-weight:700; cursor:pointer;">
-              View All Details
-            </button>
-          </div>
-        `
-        
-        L.popup()
-          .setLatLng(e.latlng)
-          .setContent(popupContent)
-          .openOn(map)
-
-        onSelect?.({ name, isUrban: true, count, code: feature.properties.code })
+        actions.selectWard({ 
+          name, 
+          isUrban: true, 
+          count, 
+          code: feature.properties.code,
+          address: feature.properties.address || 'Rajamahendravaram Municipal Corporation'
+        })
       },
     })
-  }, [reportsByArea, onHover, onSelect, getUrbanStyle, map])
+  }, [reportsByArea, onHover, actions, getUrbanStyle])
 
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
@@ -243,14 +216,13 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
       mouseover: (e) => {
         const l = e.target
         if (hoveredRef.current && hoveredRef.current !== l) {
-          // Restore previous hovered layer style
           const isUrb = hoveredRef.current.feature.properties.type === 'urban_sachivalayam'
           hoveredRef.current.setStyle(isUrb ? getUrbanStyle(hoveredRef.current.feature) : getRuralStyle(hoveredRef.current.feature))
         }
         l.setStyle(hoverRuralStyle)
         l.bringToFront()
         hoveredRef.current = l
-        onHover?.({ name, isUrban: false, count, code: feature.properties.code })
+        onHover?.({ name, isUrban: false, count, code: feature.properties.code, ...feature.properties })
       },
       mouseout: (e) => {
         e.target.setStyle(getRuralStyle(feature))
@@ -262,43 +234,16 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedRuralStyle)
         
-        // Find reports in this ward
-        const reports = state.reports.filter(r => r.assigned_area === name)
-        const recent = reports.slice(0, 3)
-        
-        let listHtml = recent.length > 0 
-          ? recent.map(r => `
-            <div style="border-bottom: 1px solid #eee; padding: 6px 0;">
-              <div style="font-weight: 800; font-size: 11px;">${r.waste_type}</div>
-              <div style="font-size: 9px; color: #666;">${r.landmark}</div>
-            </div>
-          `).join('')
-          : '<p style="font-size: 11px; color: #999;">No active reports in this ward.</p>'
-        
-        if (reports.length > 3) {
-          listHtml += `<div style="font-size: 10px; color: #E8390E; font-weight: 800; margin-top: 6px;">+ ${reports.length - 3} more reports...</div>`
-        }
-
-        const popupContent = `
-          <div style="min-width: 180px;">
-            <div style="font-weight: 900; font-size: 14px; margin-bottom: 8px;">${name}</div>
-            ${listHtml}
-            <button onclick="window.dispatchEvent(new CustomEvent('viewReportsByWard', {detail: '${name}'}))" 
-              style="width:100%; margin-top:10px; background:#E8390E; color:#fff; border:none; border-radius:6px; padding:8px; font-weight:700; cursor:pointer;">
-              View All Details
-            </button>
-          </div>
-        `
-        
-        L.popup()
-          .setLatLng(e.latlng)
-          .setContent(popupContent)
-          .openOn(map)
-
-        onSelect?.({ name, isUrban: false, count, code: feature.properties.code })
+        actions.selectWard({ 
+          name, 
+          isUrban: false, 
+          count, 
+          code: feature.properties.code,
+          address: feature.properties.address || 'Rural Rajamahendravaram'
+        })
       },
     })
-  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle, map])
+  }, [reportsByArea, onHover, actions, getRuralStyle, getUrbanStyle])
 
   const { rural, urban, unifiedCity } = useMemo(() => {
     if (!geojson) return { rural: null, urban: null, unifiedCity: null }
