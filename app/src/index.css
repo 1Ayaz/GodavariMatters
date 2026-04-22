@@ -836,12 +836,41 @@ input { font-family: var(--font); }
 /* Leader avatar */
 .leader-avatar-wrap { flex-shrink: 0; }
 
-/* ────────────────────────── RESPONSIVE — Full width like NammaKasa ────────────────────────── */
-/* NammaKasa on desktop: full-width layout, map fills screen, everything responsive */
+/* ────────────────────────── RESPONSIVE — Mobile First adjustments ────────────────────────── */
+@media (max-width: 767px) {
+  .brand { font-size: 18px; }
+  .view-panel { top: 96px; bottom: 70px; }
+  
+  /* Move map info panel out of the way of the top UI */
+  .map-info-panel {
+    top: auto;
+    bottom: 24px;
+    left: 16px;
+    right: 16px;
+    min-width: unset;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  
+  .stats-panel {
+    max-height: 80vh;
+    padding-bottom: 30px;
+  }
+  
+  .bottom-bar {
+    padding: 8px 12px calc(8px + var(--safe-bottom));
+  }
+  .report-btn {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
+
+/* NammaKasa on desktop: centered overlays */
 @media (min-width: 768px) {
   .overlay .bottom-sheet { max-width: 560px; }
   .stats-panel { max-width: 560px; left: 50%; transform: translateX(-50%) translateY(calc(100% - 170px)); }
   .stats-panel.expanded { transform: translateX(-50%) translateY(0); }
   .bottom-bar { max-width: 560px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; box-shadow: 0 -2px 20px rgba(0,0,0,0.3); }
+  .map-info-panel { top: 16px; left: 16px; max-width: 280px; }
 }
 

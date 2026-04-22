@@ -161,10 +161,15 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea }) {
     })
   }, [reportsByArea, onHover, onSelect])
 
-  if (!geojson) return null
+  const { rural, urban } = useMemo(() => {
+    if (!geojson) return { rural: null, urban: null }
+    return {
+      rural: { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') },
+      urban: { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
+    }
+  }, [geojson])
 
-  const rural = { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') }
-  const urban = { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
+  if (!rural || !urban) return null
 
   return (
     <>

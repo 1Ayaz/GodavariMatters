@@ -1,14 +1,16 @@
 import { useApp } from '../lib/store'
+import { t } from '../lib/i18n'
 
 export default function BottomBar() {
   const { state, actions } = useApp()
   const totalReports = state.reports.length
+  const lang = state.lang || 'en'
 
   return (
     <div className="bottom-bar">
       <button className="report-btn" onClick={() => actions.showReportForm(true)}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Report Garbage
+        {t('report_garbage', lang)}
       </button>
       <button className="leaderboard-fab" onClick={() => {
         const panel = document.querySelector('.stats-panel')

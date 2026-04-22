@@ -26,6 +26,7 @@ const initialState = {
   showReportForm: false,
   showCleanedForm: false,
   userLocation: null,
+  lang: typeof window !== 'undefined' ? (localStorage.getItem('gm_lang') || 'en') : 'en',
 }
 
 function reducer(state, action) {
@@ -56,6 +57,10 @@ function reducer(state, action) {
       return { ...state, userLocation: action.location }
     case 'DISMISS_SPLASH':
       return { ...state, splashDismissed: true }
+    case 'SET_LANG':
+      return { ...state, lang: action.lang }
+    case 'SET_MOBILE':
+      return { ...state, isMobile: action.mobile }
     default:
       return state
   }
@@ -103,6 +108,10 @@ export function AppProvider({ children }) {
     setView: (view) => dispatch({ type: 'SET_VIEW', view }),
     setSeverityFilter: (value) => dispatch({ type: 'SET_FILTER_SEVERITY', value }),
     setStatusFilter: (value) => dispatch({ type: 'SET_FILTER_STATUS', value }),
+    setLang: (lang) => {
+      localStorage.setItem('gm_lang', lang)
+      dispatch({ type: 'SET_LANG', lang })
+    },
     selectReport: (report) => dispatch({ type: 'SELECT_REPORT', report }),
     selectLeader: (leader) => dispatch({ type: 'SELECT_LEADER', leader }),
     showReportForm: (show) => dispatch({ type: 'SHOW_REPORT_FORM', show }),
