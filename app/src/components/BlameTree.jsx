@@ -169,7 +169,7 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
 
   const officials = useMemo(() => {
     if (!sachivalayamOfficials || !areaCode) return null
-    return sachivalayamOfficials.find(s => s.code === areaCode)
+    return sachivalayamOfficials.find(s => s.code === areaCode || `2${s.code}` === areaCode || s.code === `2${areaCode}`)
   }, [sachivalayamOfficials, areaCode])
 
   const whsName = officials?.officials?.ward_health_secretary?.name || 'Ward Health Secretary'
@@ -268,7 +268,7 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
           <div className="elected-card" onClick={() => onPoliticianClick?.({ ...jurisdiction.mla, type: 'MLA' })}>
             <div className="elected-avatar">
               <img
-                src="https://meeadireddy.com/wp-content/uploads/2024/06/adireddy-vasu-profile.jpg"
+                src={jurisdiction.mla.name.includes('Gorantla') ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Gorantla_Butchaiah_Chowdary_MLA.jpg/220px-Gorantla_Butchaiah_Chowdary_MLA.jpg' : 'https://meeadireddy.com/wp-content/uploads/2024/06/adireddy-vasu-profile.jpg'}
                 alt={jurisdiction.mla.name}
                 onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fef3cd;font-size:18px">MLA</div>' }}
               />

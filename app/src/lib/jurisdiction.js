@@ -196,7 +196,7 @@ APPCB Toll-free: 18004252738`
 
   msg += `\n\nPlease log this into the Spandana system and dispatch ${jurisdiction.official.short} to resolve immediately.
 
-— GodavariMatters · godavarimatters.in`
+— GodavariMatters · godavari-matters.vercel.app`
 
   // Determine WhatsApp number
   const phone = isUrban ? '919494060060' : '911902'
@@ -219,7 +219,7 @@ export function generateShareText(report, jurisdiction) {
 📸 See it: https://www.google.com/maps?q=${report.lat},${report.lng}
 
 ${jurisdiction.official.role} is responsible.
-Track it on GodavariMatters 👉 godavarimatters.in`
+Track it on GodavariMatters 👉 godavari-matters.vercel.app`
 }
 
 /**

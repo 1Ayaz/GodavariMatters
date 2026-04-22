@@ -1,6 +1,6 @@
 import { useApp } from '../lib/store'
 
-const SITE_URL = 'https://godavarimatters.in'
+const SITE_URL = 'https://godavari-matters.vercel.app'
 
 export default function QRModal({ onClose }) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(SITE_URL)}&size=220x220&margin=12&format=svg`
@@ -29,7 +29,7 @@ export default function QRModal({ onClose }) {
             />
           </div>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 16, fontWeight: 600 }}>
-            godavarimatters.in
+            godavari-matters.vercel.app
           </p>
           <p style={{
             fontSize: 12, color: 'var(--text-muted)', marginTop: 12,

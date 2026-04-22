@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
@@ -97,6 +97,7 @@ function WardBubbles({ boundaries, reportsByArea }) {
 function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits }) {
   const [geojson, setGeojson] = useState(null)
   const hoveredRef = useRef(null)
+  const map = useMap()
 
   useEffect(() => {
     loadData().then(({ boundaries }) => setGeojson(boundaries))
@@ -189,9 +190,10 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedUrbanStyle)
         onSelect?.({ name, isUrban: true, count, code: feature.properties.code })
+        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
       },
     })
-  }, [reportsByArea, onHover, onSelect, getUrbanStyle])
+  }, [reportsByArea, onHover, onSelect, getUrbanStyle, map])
 
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
@@ -220,9 +222,10 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedRuralStyle)
         onSelect?.({ name, isUrban: false, count, code: feature.properties.code })
+        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
       },
     })
-  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle])
+  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle, map])
 
   const { rural, urban } = useMemo(() => {
     if (!geojson) return { rural: null, urban: null }
@@ -266,8 +269,29 @@ function ReportMarkers() {
         center={[report.lat, report.lng]}
         radius={6}
         pathOptions={{ color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.9 }}
-        eventHandlers={{ click: () => actions.selectReport(report) }}
-      />
+      >
+        <Popup>
+          <div style={{ padding: '2px', minWidth: '180px' }}>
+            {report.image_url && (
+              <img src={report.image_url} alt="Report" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '6px', marginBottom: '8px' }} />
+            )}
+            <h4 style={{ margin: '0 0 4px', fontSize: '14px' }}>{report.waste_type}</h4>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{report.landmark}</p>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <span style={{ fontSize: '10px', background: color, color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                {report.severity}
+              </span>
+              {isResolved && <span style={{ fontSize: '10px', background: '#16a34a', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>RESOLVED</span>}
+            </div>
+            <button 
+              onClick={() => actions.selectReport(report)} 
+              style={{ width: '100%', padding: '8px', background: '#0D9488', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, marginTop: '10px' }}
+            >
+              Open Full Details
+            </button>
+          </div>
+        </Popup>
+      </CircleMarker>
     )
   })
 }
