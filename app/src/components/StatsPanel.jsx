@@ -26,10 +26,10 @@ export default function StatsPanel() {
     })
 
     const leaderboard = Object.values(areaMap)
-      .sort((a, b) => b.total - a.total)
+      .sort((a, b) => b.unresolved - a.unresolved)
       .slice(0, 10)
 
-    const maxCount = leaderboard[0]?.total || 1
+    const maxCount = leaderboard[0]?.unresolved || 1
 
     return { unresolved, resolved, rate, leaderboard, maxCount }
   }, [state.reports])
@@ -77,16 +77,24 @@ export default function StatsPanel() {
         </div>
       </div>
 
-      <h3 className="section-title">{t('worst_areas', lang)}</h3>
+      <h3 className="section-title" style={{ color: '#E8390E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        LEADERBOARD OF SHAME
+      </h3>
       {stats.leaderboard.map((item, i) => (
         <div key={item.name} className="lb-item">
           <span className={`lb-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
           <div className="lb-info">
             <div className="lb-name">{item.name}</div>
-            <div className="lb-ward">{item.unresolved} unresolved · {item.type === 'urban' ? 'Ward' : 'Village'}</div>
-            <div className="lb-bar" style={{ width: `${(item.total / stats.maxCount) * 100}%` }} />
+            <div className="lb-ward" style={{ fontWeight: 600, color: '#ef4444' }}>
+              {item.unresolved} CRITICAL ISSUES
+            </div>
+            <div className="lb-official" style={{ fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', marginTop: '2px' }}>
+              {item.type === 'urban' ? 'Responsible: WHS Secretary' : 'Responsible: Engineering Assistant'}
+            </div>
+            <div className="lb-bar" style={{ width: `${(item.unresolved / stats.maxCount) * 100}%`, background: '#ef4444' }} />
           </div>
-          <span className="lb-count">{item.total}</span>
+          <span className="lb-count" style={{ color: '#ef4444', fontWeight: 800 }}>{item.unresolved}</span>
         </div>
       ))}
 
