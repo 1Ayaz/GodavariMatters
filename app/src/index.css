@@ -135,7 +135,7 @@ input { font-family: var(--font); }
 }
 
 /* ────────────────────────── MAP ────────────────────────── */
-.view-panel { position: fixed; top: 88px; left: 0; right: 0; bottom: 62px; }
+.view-panel { position: fixed; top: 88px; left: 0; right: 0; bottom: 0; }
 .map-panel { z-index: 1; }
 
 .map-container {
@@ -150,11 +150,13 @@ input { font-family: var(--font); }
   background: #7B1818;
   color: #fff;
   font-family: var(--mono);
-  font-weight: 700;
+  font-weight: 800;
+  font-feature-settings: 'tnum';
   box-shadow: 0 2px 8px rgba(123, 24, 24, 0.35);
-  border: 2px solid rgba(255,255,255,0.5);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: 2.5px solid rgba(255,255,255,0.6);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
   cursor: pointer;
+  letter-spacing: -0.5px;
 }
 .ward-bubble:hover {
   transform: scale(1.15);
@@ -356,14 +358,15 @@ input { font-family: var(--font); }
 
 /* ────────────────────────── BOTTOM BAR ────────────────────────── */
 .bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
+  position: fixed; bottom: 16px; left: 16px; right: 16px; z-index: 900;
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px calc(10px + var(--safe-bottom));
-  background: rgba(255,255,255,0.96);
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.88);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
-  border-top: 1px solid rgba(0,0,0,0.04);
-  box-shadow: 0 -8px 32px rgba(0,0,0,0.06);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
 }
 .report-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -389,6 +392,7 @@ input { font-family: var(--font); }
   width: 50px; height: 50px; border-radius: 14px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   border: 1.5px solid rgba(0,0,0,0.06); color: var(--accent); font-size: 10px; font-weight: 700;
+  font-feature-settings: 'tnum';
   transition: all 0.2s ease; flex-shrink: 0; background: var(--white);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
@@ -855,28 +859,28 @@ input { font-family: var(--font); }
 /* ────────────────────────── RESPONSIVE — Mobile First adjustments ────────────────────────── */
 @media (max-width: 767px) {
   .brand { font-size: 18px; }
-  .view-panel { top: 96px; bottom: 70px; }
+  .view-panel { top: 96px; bottom: 0; }
   
-  /* Move map info panel out of the way of the top UI and make it a sleek floating pill */
+  /* Floating pill info panel on mobile */
   .map-info-panel {
     top: auto;
-    bottom: 24px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
-    width: 90%;
+    width: 88%;
     min-width: unset;
-    border-radius: 20px;
-    background: rgba(15, 15, 20, 0.85);
+    border-radius: 16px;
+    background: rgba(15, 15, 20, 0.88);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-    padding: 8px;
-    border: 1px solid rgba(255,255,255,0.15);
+    padding: 4px;
+    border: 1px solid rgba(255,255,255,0.12);
   }
   .map-info-panel.mip-light {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0,0,0,0.08);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
   }
   
   .mip-content {
@@ -895,14 +899,22 @@ input { font-family: var(--font); }
   }
   
   .bottom-bar {
-    padding: 12px 16px calc(12px + var(--safe-bottom));
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    padding: 8px 10px;
+    border-radius: 18px;
     background: rgba(255,255,255,0.92);
-    border-top: none;
   }
   .report-btn {
-    font-size: 15px;
-    padding: 14px;
-    border-radius: 16px;
+    font-size: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+  }
+  .leaderboard-fab {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
   }
 }
 
@@ -911,7 +923,7 @@ input { font-family: var(--font); }
   .overlay .bottom-sheet { max-width: 560px; }
   .stats-panel { max-width: 560px; left: 50%; transform: translateX(-50%) translateY(calc(100% - 170px)); }
   .stats-panel.expanded { transform: translateX(-50%) translateY(0); }
-  .bottom-bar { max-width: 560px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; box-shadow: 0 -2px 20px rgba(0,0,0,0.3); }
+  .bottom-bar { max-width: 480px; left: 50%; transform: translateX(-50%); }
   .map-info-panel { top: 16px; left: 16px; max-width: 280px; }
 }
 
