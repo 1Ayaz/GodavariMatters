@@ -35,31 +35,31 @@ export default function SplashScreen({ onDismiss }) {
           <span className="splash-highlight">Drowning in Waste.</span>
         </h1>
         <p className="splash-desc">
-          Our city and our river are being buried under thousands of tons of garbage.
+          Our city and our river are being buried under thousands of tons of garbage despite massive funding.
         </p>
 
         <div className="splash-data-grid">
           <div className="splash-data-card">
-            <span className="sdc-label">Daily Waste</span>
-            <span className="sdc-value sdc-accent">240+ Tons</span>
+            <span className="sdc-label">Total RMC Budget</span>
+            <span className="sdc-value sdc-accent">₹574.6 Crore</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">RMC Sanitation Budget</span>
-            <span className="sdc-value">₹60 Crores+</span>
+            <span className="sdc-label">Godavari Cleanup</span>
+            <span className="sdc-value">₹88.4 Crore</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Annual User Charges</span>
-            <span className="sdc-value sdc-accent">₹2,400/House</span>
+            <span className="sdc-label">Sanitation Ops</span>
+            <span className="sdc-value sdc-accent">₹3.0 Cr/Month</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Godavari Pollution</span>
-            <span className="sdc-value">5,000kg Plastic/Wk</span>
+            <span className="sdc-label">Garbage Tax</span>
+            <span className="sdc-value">Scrapped in 2024</span>
           </div>
         </div>
 
         <p className="splash-sub">
-          You pay your taxes. You deserve a clean city. <br />
-          It's time to hold responsible officials accountable.
+          The budget is being spent. The taxes were paid. <br />
+          Where are the results? Hold the responsible officials accountable.
         </p>
         <div className="splash-cta">{t('splash_tap', lang)}</div>
       </div>
