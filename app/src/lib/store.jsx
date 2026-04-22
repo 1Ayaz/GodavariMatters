@@ -120,6 +120,7 @@ export function AppProvider({ children }) {
     dismissSplash: () => dispatch({ type: 'DISMISS_SPLASH' }),
 
     submitReport: async (reportData, imageFile) => {
+      // This will throw if rate limited, duplicate GPS, invalid file, etc.
       const { url } = await uploadImage(imageFile)
       const jurisdiction = detectJurisdiction(reportData.lat, reportData.lng)
       
@@ -144,8 +145,12 @@ export function AppProvider({ children }) {
     },
 
     incrementSeen: async (reportId) => {
-      const updated = await apiSeen(reportId)
-      if (updated) dispatch({ type: 'UPDATE_REPORT', report: updated })
+      try {
+        const updated = await apiSeen(reportId)
+        if (updated) dispatch({ type: 'UPDATE_REPORT', report: updated })
+      } catch (e) {
+        console.error('Failed to increment seen count:', e)
+      }
     },
 
     markResolved: async (reportId, imageFile) => {

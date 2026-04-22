@@ -7,11 +7,72 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
+// ── SECURITY: Rate Limiter ──
+const RATE_LIMIT_WINDOW = 10 * 60 * 1000 // 10 minutes
+const RATE_LIMIT_MAX = 3 // max 3 reports per window
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+
+function checkRateLimit() {
+  const now = Date.now()
+  const key = 'gm_rate_limit'
+  const timestamps = JSON.parse(localStorage.getItem(key) || '[]')
+    .filter(t => now - t < RATE_LIMIT_WINDOW)
+  
+  if (timestamps.length >= RATE_LIMIT_MAX) {
+    const waitMinutes = Math.ceil((RATE_LIMIT_WINDOW - (now - timestamps[0])) / 60000)
+    throw new Error(`Too many reports. Please wait ${waitMinutes} minutes before submitting again.`)
+  }
+  
+  timestamps.push(now)
+  localStorage.setItem(key, JSON.stringify(timestamps))
+}
+
+function validateFile(file) {
+  if (!file) throw new Error('No image provided.')
+  if (file.size > MAX_FILE_SIZE) throw new Error('Image too large. Maximum size is 5MB.')
+  if (!ALLOWED_TYPES.includes(file.type) && !file.name.match(/\.(jpe?g|png|webp|heic|heif)$/i)) {
+    throw new Error('Invalid file type. Only images (JPG, PNG, WEBP) are allowed.')
+  }
+}
+
+function sanitizeText(text) {
+  if (!text) return ''
+  return text
+    .replace(/[<>]/g, '') // Strip HTML tags
+    .replace(/javascript:/gi, '') // Prevent JS injection
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .trim()
+    .slice(0, 500) // Max 500 chars for any text field
+}
+
+function checkDuplicateGPS(lat, lng) {
+  const key = 'gm_recent_gps'
+  const now = Date.now()
+  const recent = JSON.parse(localStorage.getItem(key) || '[]')
+    .filter(e => now - e.t < 5 * 60 * 1000) // 5 min window
+  
+  const isDuplicate = recent.some(e => {
+    const dist = Math.abs(e.lat - lat) + Math.abs(e.lng - lng)
+    return dist < 0.0001 // ~10m radius
+  })
+  
+  if (isDuplicate) {
+    throw new Error('A report was recently submitted from this exact location. Please wait a few minutes.')
+  }
+  
+  recent.push({ lat, lng, t: now })
+  localStorage.setItem(key, JSON.stringify(recent))
+}
+
 /**
  * Upload a report image to Supabase Storage.
  * Strips EXIF data by re-encoding through canvas before upload.
  */
 export async function uploadImage(file) {
+  // Security validations
+  validateFile(file)
+  
   if (!supabase) return { url: URL.createObjectURL(file), isLocal: true }
 
   // Strip EXIF by re-encoding through canvas
@@ -59,6 +120,15 @@ function stripExif(file) {
  * Submit a garbage report to Supabase.
  */
 export async function submitReport(report) {
+  // Security: Rate limit + GPS duplicate check
+  checkRateLimit()
+  checkDuplicateGPS(report.lat, report.lng)
+  
+  // Sanitize all text inputs
+  report.landmark = sanitizeText(report.landmark)
+  report.waste_type = sanitizeText(report.waste_type)
+  report.assigned_area = sanitizeText(report.assigned_area)
+  
   if (!supabase) {
     // Fallback: localStorage for demo mode
     const existing = JSON.parse(localStorage.getItem('gm_reports') || '[]')

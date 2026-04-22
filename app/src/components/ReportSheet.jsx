@@ -62,13 +62,13 @@ export default function ReportSheet() {
       await actions.submitReport({
         lat: location.lat,
         lng: location.lng,
-        landmark: landmark.trim(),
+        landmark: landmark.trim().slice(0, 500),
         severity,
         waste_type: wasteType,
       }, photo)
     } catch (e) {
       console.error(e)
-      alert('Failed to submit. Please try again.')
+      alert(e.message || 'Failed to submit. Please try again.')
     }
     setSubmitting(false)
   }
