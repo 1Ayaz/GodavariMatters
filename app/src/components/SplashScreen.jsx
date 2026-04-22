@@ -31,27 +31,36 @@ export default function SplashScreen({ onDismiss }) {
       <div className="splash-content">
         <div className="splash-badge">RAJAMAHENDRAVARAM</div>
         <h1 className="splash-title">
-          {t('splash_title_1', lang)}<br />
-          <span className="splash-highlight">{t('splash_title_2', lang)}</span>
+          Rajamahendravaram is <br />
+          <span className="splash-highlight">Drowning in Waste.</span>
         </h1>
-        <p className="splash-desc" dangerouslySetInnerHTML={{ __html: t('splash_desc', lang).replace('. ', '.<br />') }} />
-        <div className="splash-stats">
-          <div className="splash-stat">
-            <span className="splash-stat-num">96+</span>
-            <span className="splash-stat-label">{t('sachivalayam', lang)}s</span>
+        <p className="splash-desc">
+          Our city and our river are being buried under thousands of tons of garbage.
+        </p>
+
+        <div className="splash-data-grid">
+          <div className="splash-data-card">
+            <span className="sdc-label">Daily Waste</span>
+            <span className="sdc-value sdc-accent">240+ Tons</span>
           </div>
-          <div className="splash-divider" />
-          <div className="splash-stat">
-            <span className="splash-stat-num">2</span>
-            <span className="splash-stat-label">MLAs</span>
+          <div className="splash-data-card">
+            <span className="sdc-label">Godavari Pollution</span>
+            <span className="sdc-value">5,000kg Plastic/Wk</span>
           </div>
-          <div className="splash-divider" />
-          <div className="splash-stat">
-            <span className="splash-stat-num">1</span>
-            <span className="splash-stat-label">MP</span>
+          <div className="splash-data-card">
+            <span className="sdc-label">Annual Sanitation Tax</span>
+            <span className="sdc-value sdc-accent">₹1,200/Household</span>
+          </div>
+          <div className="splash-data-card">
+            <span className="sdc-label">Accountability</span>
+            <span className="sdc-value">96 Units</span>
           </div>
         </div>
-        <p className="splash-sub">{t('urban', lang)} + {t('rural', lang)} · All of Rajamahendravaram</p>
+
+        <p className="splash-sub">
+          You pay your taxes. You deserve a clean city. <br />
+          It's time to hold responsible officials accountable.
+        </p>
         <div className="splash-cta">{t('splash_tap', lang)}</div>
       </div>
       <div className="splash-brand">

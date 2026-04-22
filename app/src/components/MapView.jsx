@@ -66,7 +66,8 @@ function WardBubbles({ boundaries, reportsByArea }) {
 
   return boundaries.features.map((feature) => {
     const name = feature.properties.name || 'Unknown'
-    const matchName = name.toUpperCase()
+    let matchName = name.toUpperCase().replace(/\s+/g, '')
+    if (matchName.includes('SESHAYYAMETTA')) matchName = 'SESHAYYAMETTA'
     const count = reportsByArea[matchName] || 0
     if (count === 0) return null
 
@@ -106,7 +107,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   // Choropleth heatmap style
   const getUrbanStyle = useCallback((feature) => {
-    const name = (feature.properties.name || '').toUpperCase()
+    let name = (feature.properties.name || '').toUpperCase().replace(/\s+/g, '')
+    if (name.includes('SESHAYYAMETTA')) name = 'SESHAYYAMETTA'
     const count = reportsByArea?.[name] || 0
     let fillOpacity = 0
     if (count > 0) fillOpacity = Math.min(0.7, 0.05 + (count * 0.05))
@@ -315,9 +317,11 @@ export default function MapView() {
   const reportsByArea = useMemo(() => {
     const map = {}
     state.reports.forEach(r => {
-      const area = (r.assigned_area || '').toUpperCase()
-      if (!map[area]) map[area] = 0
-      map[area]++
+      // Normalize: UpperCase and remove ALL spaces (fixes KAMBALA PETA vs KAMBALAPETA)
+      let area = (r.assigned_area || 'Unknown').toUpperCase().replace(/\s+/g, '')
+      // Group SESHAYYAMETTA-02 under SESHAYYAMETTA for map visualization
+      if (area.includes('SESHAYYAMETTA')) area = 'SESHAYYAMETTA'
+      map[area] = (map[area] || 0) + 1
     })
     return map
   }, [state.reports])
