@@ -14,8 +14,8 @@ L.Icon.Default.mergeOptions({
 })
 
 // Center covering both Urban and Rural Rajahmundry
-const RJY_CENTER = [17.013, 81.796]
-const RJY_ZOOM = 12
+const RJY_CENTER = [17.005, 81.780]
+const RJY_ZOOM = 13
 
 const SEVERITY_COLORS = {
   minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
@@ -109,7 +109,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     if (count > 0) fillOpacity = Math.min(0.7, 0.05 + (count * 0.05))
     
     return {
-      color: count > 0 ? '#E8390E' : 'rgba(255,255,255,0.18)',
+      color: count > 0 ? '#E8390E' : 'rgba(0,0,0,0.15)', // Darker stroke for light map
       weight: count > 0 ? 1.5 : 0.8,
       opacity: count > 0 ? 0.8 : 1,
       fillColor: '#E8390E',
@@ -140,27 +140,27 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     if (count > 0) fillOpacity = Math.min(0.5, 0.1 + (count * 0.05))
     
     return {
-      color: '#0D9488', // Teal accent
+      color: count > 0 ? '#E8390E' : 'rgba(0,0,0,0.15)', // Red accent, dark gray for 0
       weight: count > 0 ? 1.5 : 0.8,
       opacity: count > 0 ? 0.9 : 0.4,
-      fillColor: '#0D9488',
+      fillColor: '#E8390E',
       fillOpacity: fillOpacity,
     }
   }, [reportsByArea])
 
   const hoverRuralStyle = {
-    color: '#14B8A6',
+    color: '#E8390E',
     weight: 2,
     opacity: 1,
-    fillColor: '#14B8A6',
+    fillColor: '#E8390E',
     fillOpacity: 0.2,
   }
 
   const selectedRuralStyle = {
-    color: '#14B8A6',
+    color: '#E8390E',
     weight: 3,
     opacity: 1,
-    fillColor: '#14B8A6',
+    fillColor: '#E8390E',
     fillOpacity: 0.35,
   }
 
@@ -318,7 +318,7 @@ export default function MapView() {
         whenReady={(e) => {
           e.target.on('click', handleMapClick)
         }}>
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
         <InteractiveBoundaryLayer
           onHover={setHoveredArea}
           onSelect={setSelectedWard}
