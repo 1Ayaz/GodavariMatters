@@ -35,7 +35,7 @@ export default function SplashScreen({ onDismiss }) {
           <span className="splash-highlight">Drowning in Waste.</span>
         </h1>
         <p className="splash-desc">
-          Our city and our river are being buried under thousands of tons of garbage despite massive funding.
+          We pay for a clean city. Our Property Tax includes dedicated charges for drainage and waste.
         </p>
 
         <div className="splash-data-grid">
@@ -44,22 +44,22 @@ export default function SplashScreen({ onDismiss }) {
             <span className="sdc-value sdc-accent">₹574.6 Crore</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Godavari Cleanup</span>
-            <span className="sdc-value">₹88.4 Crore</span>
+            <span className="sdc-label">Tax Collection Rate</span>
+            <span className="sdc-value">82% (2025-26)</span>
           </div>
           <div className="splash-data-card">
             <span className="sdc-label">Sanitation Ops</span>
             <span className="sdc-value sdc-accent">₹3.0 Cr/Month</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Garbage Tax</span>
-            <span className="sdc-value">Scrapped in 2024</span>
+            <span className="sdc-label">Hidden Taxes</span>
+            <span className="sdc-value">Drainage & Waste</span>
           </div>
         </div>
 
         <p className="splash-sub">
-          The budget is being spent. The taxes were paid. <br />
-          Where are the results? Hold the responsible officials accountable.
+          The budget is spent. Taxes are collected. <br />
+          Where is the service? Hold responsible officials accountable.
         </p>
         <div className="splash-cta">{t('splash_tap', lang)}</div>
       </div>
