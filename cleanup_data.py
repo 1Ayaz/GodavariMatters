@@ -33,7 +33,7 @@ for f in rjy_rural:
     
     # Build clean properties
     clean_props = {
-        "name": name,
+        "name": p.get("village", "Unknown"),
         "mandal": "Rajahmundry (Rural)",
         "district": p.get("district", "East Godavari"),
         "village_code": code,
@@ -101,14 +101,14 @@ all_region = rjy_rural + urban_entry
 clean_region = []
 for f in all_region:
     p = f["properties"]
-    name = p.get("village", "Unknown")
-    code = p.get("villcodeap", "NA")
+    name = p.get("village", p.get("name", "Unknown"))
+    code = p.get("villcodeap", p.get("village_code", "NA"))
     
     if name == "River" and code == "NA":
         continue  # Skip river
     
     clean_props = {
-        "name": name,
+        "name": p.get("village", name),
         "mandal": p.get("mandal", ""),
         "district": p.get("district", ""),
         "village_code": code,

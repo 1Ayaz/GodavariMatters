@@ -94,10 +94,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Torredu",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "001",
         "shape_area": 10766320.3238363,
         "type": "rural_village"
       }
@@ -174,10 +174,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Katheru",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "003",
         "shape_area": 9143941.24822497,
         "type": "rural_village"
       }
@@ -258,10 +258,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Dowleswaram",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "008",
         "shape_area": 7331807.79247418,
         "type": "rural_village"
       }
@@ -366,10 +366,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Hukumpeta",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "006",
         "shape_area": 5929697.49190553,
         "type": "rural_village"
       }
@@ -490,10 +490,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Bommuru",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "007",
         "shape_area": 6885259.06790734,
         "type": "rural_village"
       }
@@ -658,10 +658,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Rajahmundry Part",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "004",
         "shape_area": 13957576.9256788,
         "type": "rural_village"
       }
@@ -758,10 +758,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Kolamuru",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "002",
         "shape_area": 15575834.1937911,
         "type": "rural_village"
       }
@@ -826,10 +826,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Rajavolu",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "009",
         "shape_area": 4781268.18708138,
         "type": "rural_village"
       }
@@ -950,10 +950,10 @@
         ]
       },
       "properties": {
-        "name": "Unknown",
+        "name": "Morampudi (Rural)",
         "mandal": "Rajahmundry (Rural)",
         "district": "East Godavari",
-        "village_code": "NA",
+        "village_code": "005",
         "shape_area": 7587768.28162301,
         "type": "rural_village"
       }
