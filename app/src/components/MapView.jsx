@@ -71,7 +71,9 @@ function WardBubbles({ boundaries, reportsByArea }) {
     const count = reportsByArea[matchName] || 0
     if (count === 0) return null
 
-    const center = getCentroid(feature)
+    const center = feature.properties.lat && feature.properties.lng 
+      ? [feature.properties.lat, feature.properties.lng]
+      : getCentroid(feature)
     // Aggressive scaling for visual impact
     const baseSize = 24
     let size = baseSize
@@ -333,7 +335,8 @@ function ReportMarkers() {
   const { filteredReports, actions } = useApp()
   return filteredReports.map(report => {
     const isResolved = report.status === 'resolved'
-    const color = isResolved ? '#16a34a' : (SEVERITY_COLORS[report.severity] || '#f97316')
+    const isPending = report.status === 'pending_review'
+    const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
     return (
       <CircleMarker
         key={report.id}
@@ -350,10 +353,15 @@ function ReportMarkers() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>{report.waste_type}</h4>
                 <span style={{ fontSize: '10px', background: color, color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                  {report.severity?.toUpperCase()}
+                  {isResolved ? 'CLEANED' : isPending ? 'PENDING' : report.severity?.toUpperCase()}
                 </span>
               </div>
               <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#666', lineHeight: '1.4' }}>{report.landmark}</p>
+              {isPending && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: '6px 10px', borderRadius: '6px', fontSize: '10px', color: '#92400e', marginBottom: '10px' }}>
+                  🧹 A citizen reported this as cleaned. Admin review in progress.
+                </div>
+              )}
               <button 
                 onClick={() => actions.selectReport(report)} 
                 style={{ width: '100%', padding: '10px', background: '#111', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px' }}

@@ -92,6 +92,22 @@ export function AppProvider({ children }) {
       }
     }
     init()
+    
+    // Real-time listener
+    let channel = null
+    if (supabase) {
+      channel = supabase
+        .channel('public:reports')
+        .on('postgres_changes', { event: '*', table: 'reports', schema: 'public' }, (payload) => {
+          if (payload.eventType === 'INSERT') dispatch({ type: 'ADD_REPORT', report: payload.new })
+          if (payload.eventType === 'UPDATE') dispatch({ type: 'UPDATE_REPORT', report: payload.new })
+          if (payload.eventType === 'DELETE') {
+            // Re-fetch all to be safe on delete, or implement DELETE action
+            getReports().then(reports => dispatch({ type: 'SET_REPORTS', reports }))
+          }
+        })
+        .subscribe()
+    }
 
     // Listen for resize
     const handleResize = () => {
@@ -101,7 +117,10 @@ export function AppProvider({ children }) {
       }
     }
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [])
 
   const actions = {

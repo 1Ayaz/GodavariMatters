@@ -232,7 +232,7 @@ export async function markResolved(reportId, cleanedImageUrl) {
 
   const { data, error } = await supabase
     .from('reports')
-    .update({ status: 'resolved', cleaned_image_url: cleanedImageUrl, resolved_at: new Date().toISOString() })
+    .update({ status: 'pending_review', cleaned_image_url: cleanedImageUrl, resolved_at: new Date().toISOString() })
     .eq('id', reportId)
     .select()
     .single()

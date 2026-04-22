@@ -249,10 +249,13 @@ function AdminReportCard({ report, onApprove, onReject, onDelete }) {
 
         <button onClick={() => act(() => onDelete(report))} disabled={loading}
           style={{
-            width: '100%', marginTop: 8, padding: '8px', borderRadius: 8, border: '1px solid #e8e8ec',
-            background: 'transparent', color: '#9ca3af', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
-          }}>
-          Delete Report
+            width: '100%', marginTop: 8, padding: '8px', borderRadius: 8, border: '1px solid #fee2e2',
+            background: '#fef2f2', color: '#ef4444', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.background = '#fee2e2' }}
+          onMouseOut={(e) => { e.currentTarget.style.background = '#fef2f2' }}>
+          Delete Report (Permanent)
         </button>
       </div>
     </div>

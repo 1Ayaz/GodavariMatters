@@ -10,6 +10,7 @@ const COMMISSIONER_EMAIL = 'mc.rjy@aptransco.in' // Public RMC email
 const MEEKOSAM_URL = 'https://meekosam.ap.gov.in'
 const PGRS_URL = 'https://pgrs.ap.gov.in/'
 const RURAL_HELPLINE = '1902'
+const RMC_LOGO = 'https://upload.wikimedia.org/wikipedia/en/2/2f/Rajahmundry_Municipal_Corporation_Logo.png'
 
 function ContactSheet({ person, onClose }) {
   if (!person) return null
@@ -25,14 +26,20 @@ function ContactSheet({ person, onClose }) {
       <div className="bottom-sheet small-sheet" style={{ padding: 0 }}>
         {/* Header */}
         <div className="sheet-header">
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', letterSpacing: 1, marginBottom: 4 }}>
-              {person.roleLabel}
-            </div>
-            <h2 style={{ fontSize: 18 }}>{person.name}</h2>
-            {person.sub && (
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{person.sub}</p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {(person.role === 'commissioner' || person.roleLabel?.includes('RMC')) && (
+              <img src={RMC_LOGO} alt="RMC Logo" style={{ width: 44, height: 44, objectFit: 'contain' }} 
+                onError={(e) => { e.target.style.display = 'none' }} />
             )}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', letterSpacing: 1, marginBottom: 4 }}>
+                {person.roleLabel}
+              </div>
+              <h2 style={{ fontSize: 18 }}>{person.name}</h2>
+              {person.sub && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{person.sub}</p>
+              )}
+            </div>
           </div>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
