@@ -44,12 +44,7 @@ async function adminDeleteReport(reportId, report) {
   // 1. Delete image from storage if possible
   if (report?.image_url) {
     try {
-      if (report.image_url.includes('cloudinary')) {
-        // We cannot delete from Cloudinary client-side via unsigned upload preset.
-        // It requires a signed signature from a secure backend.
-        // For now, we'll let it be on Cloudinary (25GB is huge).
-        console.warn('Cannot delete Cloudinary image from client-side without secure signature.')
-      } else if (report.image_url.includes('supabase.co')) {
+      if (report.image_url.includes('supabase.co')) {
         // Delete from Supabase Storage
         const fileName = report.image_url.split('/').pop()
         if (fileName) {

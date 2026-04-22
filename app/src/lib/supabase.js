@@ -77,31 +77,9 @@ export async function uploadImage(file) {
   // Compress aggressively to save storage
   const compressed = await compressImage(file)
   
-  // Try Cloudinary first (25GB free tier vs Supabase's 1GB)
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+  // We will upload directly to Supabase Storage (pollution_snaps bucket)
   
-  if (cloudName && uploadPreset) {
-    try {
-      const formData = new FormData()
-      formData.append('file', compressed)
-      formData.append('upload_preset', uploadPreset)
-      formData.append('folder', 'godavarimatters')
-      
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData
-      })
-      
-      if (!res.ok) throw new Error('Cloudinary upload failed')
-      const data = await res.json()
-      return { url: data.secure_url, isLocal: false }
-    } catch (e) {
-      console.warn('Cloudinary upload failed, falling back:', e)
-    }
-  }
-  
-  // Fallback: Supabase Storage
+
   if (supabase) {
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
     const { data, error } = await supabase.storage
