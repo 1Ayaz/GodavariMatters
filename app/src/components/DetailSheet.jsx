@@ -79,12 +79,27 @@ export default function DetailSheet() {
         <div className="sheet-body">
           {report ? (
             <>
-              {/* Photo */}
+              {/* Photo(s) */}
               <div className="detail-photo-wrap">
-                <img src={report.image_url} alt="Report" className="detail-photo" />
-                <button className="seen-btn" onClick={handleSeen}>
-                  {t('ive_seen_this', lang)} {report.seen_count > 0 && `(${report.seen_count})`}
-                </button>
+                {report.cleaned_image_url ? (
+                  <div className="before-after-container">
+                    <div className="ba-item">
+                      <img src={report.image_url} alt="Before" className="detail-photo" />
+                      <span className="ba-label before">{t('before', lang) || 'BEFORE'}</span>
+                    </div>
+                    <div className="ba-item">
+                      <img src={report.cleaned_image_url} alt="After" className="detail-photo" />
+                      <span className="ba-label after">{t('after', lang) || 'AFTER'}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <img src={report.image_url} alt="Report" className="detail-photo" />
+                )}
+                {!isResolved && (
+                  <button className="seen-btn" onClick={handleSeen}>
+                    {t('ive_seen_this', lang)} {report.seen_count > 0 && `(${report.seen_count})`}
+                  </button>
+                )}
               </div>
 
               {/* Stats */}

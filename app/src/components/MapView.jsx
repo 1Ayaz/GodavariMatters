@@ -82,7 +82,8 @@ function WardBubbles({ boundaries, reportsByArea, onBubbleClick }) {
     const name = feature.properties.name || 'Unknown'
     let matchName = normalizeKey(name)
     if (matchName.includes('SESHAYYAMETTA')) matchName = 'SESHAYYAMETTA'
-    const count = reportsByArea[matchName] || 0
+    const stats = reportsByArea[matchName]
+    const count = stats?.total || 0
     if (count === 0) return null
 
     const center = feature.properties.lat && feature.properties.lng 
@@ -142,7 +143,11 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   const getUrbanStyle = useCallback((feature) => {
     let name = normalizeKey(feature.properties.name || '')
     if (name.includes('SESHAYYAMETTA')) name = 'SESHAYYAMETTA'
-    const count = reportsByArea?.[name] || 0
+    const stats = reportsByArea?.[name]
+    const count = stats?.total || 0
+    const resolved = stats?.resolved || 0
+    const isFullyResolved = count > 0 && count === resolved
+
     let fillOpacity = 0
     if (count > 0) fillOpacity = Math.min(0.6, 0.05 + (count * 0.05))
     
@@ -150,7 +155,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
       color: 'rgba(0,0,0,0.06)',
       weight: 0.5,
       opacity: 0.3,
-      fillColor: '#E8390E',
+      fillColor: isFullyResolved ? '#16a34a' : '#E8390E',
       fillOpacity: fillOpacity,
     }
   }, [reportsByArea])
@@ -174,7 +179,11 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   // Rural uses same style as urban
   const getRuralStyle = useCallback((feature) => {
     const name = normalizeKey(feature.properties.name || '')
-    const count = reportsByArea?.[name] || 0
+    const stats = reportsByArea?.[name]
+    const count = stats?.total || 0
+    const resolved = stats?.resolved || 0
+    const isFullyResolved = count > 0 && count === resolved
+
     let fillOpacity = 0
     if (count > 0) fillOpacity = Math.min(0.6, 0.05 + (count * 0.05))
     
@@ -182,7 +191,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
       color: 'rgba(0,0,0,0.06)',
       weight: 0.5,
       opacity: 0.3,
-      fillColor: '#E8390E',
+      fillColor: isFullyResolved ? '#16a34a' : '#E8390E',
       fillOpacity: fillOpacity,
     }
   }, [reportsByArea])
@@ -206,7 +215,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   const onEachUrban = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
     const matchName = normalizeKey(name)
-    const count = reportsByArea?.[matchName] || 0
+    const stats = reportsByArea?.[matchName]
+    const count = stats?.total || 0
 
     layer.on({
       mouseover: (e) => {
@@ -244,7 +254,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
     const matchName = normalizeKey(name)
-    const count = reportsByArea?.[matchName] || 0
+    const stats = reportsByArea?.[matchName]
+    const count = stats?.total || 0
 
     layer.on({
       mouseover: (e) => {
@@ -496,11 +507,11 @@ export default function MapView() {
   const reportsByArea = useMemo(() => {
     const map = {}
     state.reports.forEach(r => {
-      // Normalize: UpperCase and remove ALL spaces (fixes KAMBALA PETA vs KAMBALAPETA)
       let area = normalizeKey(r.assigned_area || 'Unknown')
-      // Group SESHAYYAMETTA-02 under SESHAYYAMETTA for map visualization
       if (area.includes('SESHAYYAMETTA')) area = 'SESHAYYAMETTA'
-      map[area] = (map[area] || 0) + 1
+      if (!map[area]) map[area] = { total: 0, resolved: 0 }
+      map[area].total++
+      if (r.status === 'resolved') map[area].resolved++
     })
     return map
   }, [state.reports])
