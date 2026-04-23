@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
@@ -197,7 +197,6 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         L.DomEvent.stopPropagation(e)
         const l = e.target
         l.setStyle(selectedUrbanStyle)
-        
         onSelect?.({
           name, 
           isUrban: true, 
@@ -205,9 +204,10 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
           code: feature.properties.code,
           address: feature.properties.address || 'Rajamahendravaram Municipal Corporation'
         })
+        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
       },
     })
-  }, [reportsByArea, onHover, onSelect, getUrbanStyle])
+  }, [reportsByArea, onHover, onSelect, getUrbanStyle, map])
 
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
@@ -234,7 +234,6 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         L.DomEvent.stopPropagation(e)
         const l = e.target
         l.setStyle(selectedRuralStyle)
-        
         onSelect?.({
           name, 
           isUrban: false, 
@@ -242,9 +241,10 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
           code: feature.properties.code,
           address: feature.properties.address || 'Rural Rajamahendravaram'
         })
+        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
       },
     })
-  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle])
+  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle, map])
 
   const { rural, urban } = useMemo(() => {
     if (!geojson) return { rural: null, urban: null }
