@@ -21,7 +21,11 @@ async function adminApproveResolved(reportId) {
     if (idx >= 0) { reports[idx].status = 'resolved'; localStorage.setItem('gm_reports', JSON.stringify(reports)) }
     return
   }
-  await supabase.from('reports').update({ status: 'resolved', admin_approved: true, admin_reviewed_at: new Date().toISOString() }).eq('id', reportId)
+  const { error } = await supabase.from('reports').update({ status: 'resolved' }).eq('id', reportId)
+  if (error) {
+    console.error('Approve failed:', error)
+    alert(`Approve failed: ${error.message}`)
+  }
 }
 
 async function adminRejectResolved(reportId) {
@@ -31,7 +35,11 @@ async function adminRejectResolved(reportId) {
     if (idx >= 0) { reports[idx].status = 'unresolved'; reports[idx].cleaned_image_url = null; localStorage.setItem('gm_reports', JSON.stringify(reports)) }
     return
   }
-  await supabase.from('reports').update({ status: 'unresolved', cleaned_image_url: null, admin_approved: false, admin_reviewed_at: new Date().toISOString() }).eq('id', reportId)
+  const { error } = await supabase.from('reports').update({ status: 'unresolved', cleaned_image_url: null }).eq('id', reportId)
+  if (error) {
+    console.error('Reject failed:', error)
+    alert(`Reject failed: ${error.message}`)
+  }
 }
 
 async function adminDeleteReport(reportId, report) {
@@ -169,7 +177,7 @@ function AdminLogin({ onLogin }) {
 // ── Report card in admin ──
 function AdminReportCard({ report, onApprove, onReject, onDelete }) {
   const [loading, setLoading] = useState(false)
-  const isPendingReview = report.cleaned_image_url && report.status !== 'resolved' && report.admin_approved !== false
+  const isPendingReview = report.cleaned_image_url && report.status !== 'resolved'
   const isResolved = report.status === 'resolved'
   const daysAgo = Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000))
 
