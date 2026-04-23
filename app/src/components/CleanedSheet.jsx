@@ -26,8 +26,8 @@ export default function CleanedSheet() {
       setPhoto(null)
       setPreview(null)
     } catch (e) {
-      console.error(e)
-      alert('Failed to submit verification.')
+      console.error('CleanedSheet submit error:', e)
+      alert(e.message || 'Failed to submit verification. Please try again.')
     }
     setSubmitting(false)
   }

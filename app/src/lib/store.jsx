@@ -194,10 +194,9 @@ export function AppProvider({ children }) {
     markResolved: async (reportId, imageFile) => {
       const { url } = await uploadImage(imageFile)
       const updated = await apiResolve(reportId, url)
-      if (updated) {
-        dispatch({ type: 'UPDATE_REPORT', report: updated })
-        dispatch({ type: 'SHOW_CLEANED_FORM', show: false })
-      }
+      dispatch({ type: 'UPDATE_REPORT', report: updated })
+      dispatch({ type: 'SHOW_CLEANED_FORM', show: false })
+      dispatch({ type: 'SELECT_REPORT', report: updated })
     },
   }
 

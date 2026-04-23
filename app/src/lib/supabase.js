@@ -228,22 +228,52 @@ export async function markResolved(reportId, cleanedImageUrl) {
     const reports = JSON.parse(localStorage.getItem('gm_reports') || '[]')
     const idx = reports.findIndex(r => r.id === reportId)
     if (idx >= 0) {
-      reports[idx].status = 'resolved'
+      reports[idx].status = 'pending_review'
       reports[idx].cleaned_image_url = cleanedImageUrl
       reports[idx].resolved_at = new Date().toISOString()
       localStorage.setItem('gm_reports', JSON.stringify(reports))
       return reports[idx]
     }
-    return null
+    throw new Error('Report not found in local storage.')
+  }
+
+  // First verify the report exists
+  const { data: existing, error: fetchErr } = await supabase
+    .from('reports')
+    .select('id, status')
+    .eq('id', reportId)
+    .single()
+
+  if (fetchErr || !existing) {
+    console.error('Failed to find report for update:', fetchErr)
+    throw new Error('Could not find the report. It may have been deleted.')
   }
 
   const { data, error } = await supabase
     .from('reports')
-    .update({ status: 'pending_review', cleaned_image_url: cleanedImageUrl, resolved_at: new Date().toISOString() })
+    .update({
+      status: 'pending_review',
+      cleaned_image_url: cleanedImageUrl,
+      resolved_at: new Date().toISOString()
+    })
     .eq('id', reportId)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('Supabase update error:', error)
+    // RLS policy likely blocking anonymous updates — provide actionable message
+    if (error.code === 'PGRST301' || error.message?.includes('policy') || error.message?.includes('permission')) {
+      throw new Error('Update blocked by database security policy. The reports table may need an UPDATE policy for anonymous users.')
+    }
+    throw new Error(`Failed to update report: ${error.message}`)
+  }
+
+  if (!data) {
+    // RLS can silently return no rows on update without raising an error
+    console.error('Update returned no data — likely blocked by RLS policy')
+    throw new Error('Verification update was blocked. Please contact the admin to check database policies.')
+  }
+
   return data
 }

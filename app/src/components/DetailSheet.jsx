@@ -46,8 +46,8 @@ export default function DetailSheet() {
   }
 
   return (
-    <div className={`overlay${!state.isMobile ? ' side-mode' : ''}`} onClick={(e) => e.target === e.currentTarget && (actions.selectReport(null) || actions.selectWard(null))}>
-      <div className={`bottom-sheet detail-sheet${!state.isMobile ? ' side-panel' : ''}`}>
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && (actions.selectReport(null) || actions.selectWard(null))}>
+      <div className="bottom-sheet detail-sheet">
         <div className="sheet-header">
           <div>
             <div className="detail-badges">
