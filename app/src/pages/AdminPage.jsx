@@ -100,17 +100,17 @@ function AdminLogin({ onLogin }) {
 
   return (
     <div style={{
-      minHeight: '100vh', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+      minHeight: '100vh', background: 'radial-gradient(circle at top left, #1e1b4b 0%, #0f172a 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'var(--font)'
     }}>
       <div style={{
-        width: '100%', maxWidth: 400,
-        background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24,
-        padding: '40px 36px', boxShadow: '0 32px 80px rgba(0,0,0,0.5)'
+        width: '100%', maxWidth: 420,
+        background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(30px) saturate(150%)',
+        border: '1px solid rgba(255,255,255,0.12)', borderRadius: 32,
+        padding: '48px 40px', boxShadow: '0 40px 100px rgba(0,0,0,0.6)'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: -1 }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: -1.5 }}>
             Godavar<span style={{ color: '#E8390E', fontStyle: 'italic' }}>!</span>Matters
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 6, fontWeight: 500 }}>

@@ -444,11 +444,12 @@ input { font-family: var(--font); }
 
 .bottom-sheet {
   width: 100%; max-width: 560px; max-height: 92vh;
-  background: var(--white); border-radius: 24px 24px 0 0;
+  background: #ffffff; border-radius: 24px 24px 0 0;
   overflow-y: auto; 
   /* Ultra-smooth spring animation */
   animation: slideUpSpring 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+  box-shadow: 0 -12px 60px rgba(0,0,0,0.18);
+  border: 1px solid rgba(0,0,0,0.04);
 }
 .small-sheet { max-height: 60vh; }
 .detail-sheet { max-height: 94vh; }
@@ -647,16 +648,20 @@ input { font-family: var(--font); }
 
 /* ── Action buttons ── */
 .action-btn {
-  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 14px; border-radius: var(--radius);
-  font-size: 15px; font-weight: 700; transition: all 0.15s;
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px; border-radius: 16px;
+  font-size: 15px; font-weight: 800; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
+.action-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+.action-btn:active:not(:disabled) { transform: translateY(0); }
+
 .complaint-btn { background: var(--green); color: var(--white); margin-bottom: 8px; }
 .complaint-btn:hover { background: #15803d; }
 .cleaned-btn { background: var(--white); color: var(--text-primary); border: 1.5px solid var(--border); }
 .cleaned-btn:hover { border-color: var(--green); color: var(--green); }
 .submit-cleaned-btn { background: var(--green); color: var(--white); margin-top: 16px; }
-.submit-cleaned-btn:disabled, .submit-cleaned-btn.disabled { background: #86efac; cursor: not-allowed; }
+.submit-cleaned-btn:disabled, .submit-cleaned-btn.disabled { background: #86efac; cursor: not-allowed; opacity: 0.7; }
 
 /* ── Leader sheet ── */
 .leader-header-info { display: flex; align-items: center; gap: 12px; }
@@ -1115,11 +1120,10 @@ input { font-family: var(--font); }
   left: 0; right: 0; bottom: 0;
   z-index: 1501;
   max-height: 65vh;
-  background: rgba(255,255,255,0.99);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: #ffffff;
   border-radius: 24px 24px 0 0;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 -12px 60px rgba(0,0,0,0.2);
+  border-top: 1px solid rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
   animation: slideUpSpring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
