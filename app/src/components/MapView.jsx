@@ -254,12 +254,43 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     }
   }, [geojson])
 
-  // City Limits boundary style — clean dashed red outline
-  const cityLimitStyle = {
-    color: '#E8390E',
-    weight: 3,
-    dashArray: '10, 8',
-    opacity: 0.8,
+  // Build inverted mask: gray out everything OUTSIDE the city boundary
+  const maskGeoJSON = useMemo(() => {
+    if (!cityLimits) return null
+    // Get city boundary coordinates
+    const cityCoords = cityLimits.geometry?.coordinates?.[0]
+      || cityLimits.features?.[0]?.geometry?.coordinates?.[0]
+    if (!cityCoords) return null
+
+    // World rectangle (outer ring) — must be counter-clockwise for GeoJSON hole
+    const worldRing = [
+      [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
+    ]
+    // City boundary is the hole (inner ring) — already clockwise from GeoJSON
+    return {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [worldRing, cityCoords]
+      }
+    }
+  }, [cityLimits])
+
+  // Style for the outside mask — warm muted overlay
+  const maskStyle = {
+    color: 'transparent',
+    weight: 0,
+    fillColor: '#e8e4e0',
+    fillOpacity: 0.6,
+    interactive: false
+  }
+
+  // Style for the city boundary line — barely visible whisper
+  const boundaryLineStyle = {
+    color: '#d4574a',
+    weight: 1.5,
+    opacity: 0.3,
+    dashArray: '8, 6',
     fillColor: 'transparent',
     fillOpacity: 0,
     interactive: false
@@ -269,9 +300,12 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   return (
     <>
+      {/* Outside mask — grays out areas outside city limits */}
+      {maskGeoJSON && <GeoJSON key="city_mask" data={maskGeoJSON} style={() => maskStyle} />}
+      {/* Subtle boundary line on city edge */}
+      {cityLimits && <GeoJSON key="city_border" data={cityLimits} style={() => boundaryLineStyle} />}
       <GeoJSON key="rural" data={rural} style={getRuralStyle} onEachFeature={onEachRural} />
       <GeoJSON key="urban" data={urban} style={getUrbanStyle} onEachFeature={onEachUrban} />
-      {cityLimits && <GeoJSON key="city_limits" data={cityLimits} style={() => cityLimitStyle} />}
     </>
   )
 }
