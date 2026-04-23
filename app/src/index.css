@@ -265,53 +265,81 @@ input { font-family: var(--font); }
 .gps-btn { color: #ff5533; }
 
 /* ────────────────────────── STATS PANEL ────────────────────────── */
+/* Hidden by default — slides up from bottom when toggled */
+.stats-backdrop {
+  position: fixed; inset: 0; z-index: 790;
+  background: rgba(0,0,0,0.2);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
 .stats-panel {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 800;
-  background: rgba(255,255,255,0.96); backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(255,255,255,0.98); backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-radius: 24px 24px 0 0;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.1);
-  padding: 0 20px 100px; max-height: 80vh; overflow-y: auto;
-  transform: translateY(calc(100% - 185px));
-  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 48px rgba(0,0,0,0.12);
+  padding: 0 24px 100px;
+  max-height: calc(100vh - 80px); overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 }
-.stats-panel.expanded { transform: translateY(0); }
+.stats-panel.visible {
+  transform: translateY(0);
+}
 .drag-handle {
-  width: 40px; height: 5px; background: rgba(0,0,0,0.12); border-radius: 3px;
-  margin: 12px auto 16px; cursor: grab; transition: background 0.2s;
+  width: 40px; height: 5px; background: rgba(0,0,0,0.15); border-radius: 3px;
+  margin: 12px auto 20px; cursor: grab; transition: background 0.2s;
 }
-.drag-handle:hover { background: rgba(0,0,0,0.25); }
-.stats-cards { display: flex; gap: 8px; margin-bottom: 16px; }
+.drag-handle:hover { background: rgba(0,0,0,0.3); }
+
+.stats-cards { display: flex; gap: 10px; margin-bottom: 24px; }
 .stat-card {
-  flex: 1; padding: 12px 10px; border-radius: var(--radius);
+  flex: 1; padding: 18px 12px; border-radius: var(--radius);
   text-align: center; border: 1px solid var(--border);
+  transition: transform 0.2s;
 }
-.stat-number { display: block; font-family: var(--mono); font-size: 26px; font-weight: 800; line-height: 1.1; }
-.stat-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+.stat-card:hover { transform: translateY(-2px); }
+.stat-number { display: block; font-family: var(--mono); font-size: 32px; font-weight: 800; line-height: 1.1; }
+.stat-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; }
+.unresolved-card { border-color: #fecaca; background: #fef2f2; }
 .unresolved-card .stat-number { color: var(--accent); }
 .resolved-card { background: var(--green-light); border-color: #d1fae5; }
 .resolved-card .stat-number { color: var(--green); }
 .rate-card .stat-number { color: var(--text-primary); }
-.rate-card .stat-number small { font-size: 14px; }
+.rate-card .stat-number small { font-size: 16px; }
 
 .section-title {
-  font-size: 11px; font-weight: 700; letter-spacing: 1px;
-  color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+  color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;
 }
 
 /* ── Leaderboard items ── */
+.lb-list { padding-bottom: 20px; }
 .lb-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
-  transition: background 0.1s;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
 }
-.lb-rank { font-family: var(--mono); font-size: 18px; font-weight: 800; min-width: 28px; color: var(--text-primary); }
-.lb-rank.top3 { color: var(--accent); }
+.lb-item:last-child { border-bottom: none; }
+.lb-item:hover { background: rgba(0,0,0,0.02); margin: 0 -24px; padding: 14px 24px; }
+.lb-rank { font-family: var(--mono); font-size: 16px; font-weight: 800; min-width: 24px; color: var(--text-secondary); text-align: center; }
+.lb-rank.top3 { color: var(--accent); font-size: 18px; }
 .lb-info { flex: 1; min-width: 0; }
-.lb-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lb-ward { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-.lb-bar { height: 3px; border-radius: 2px; margin-top: 4px; background: var(--accent); transition: width 0.5s ease; }
-.lb-count { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; }
+.lb-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+.lb-ward { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+.lb-bar { height: 3px; border-radius: 2px; margin-top: 6px; background: var(--accent); transition: width 0.6s cubic-bezier(0.32, 0.72, 0, 1); }
+.lb-count { font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--text-secondary); flex-shrink: 0; }
+.lb-empty { text-align: center; padding: 32px 0; color: var(--text-muted); font-size: 14px; }
+
+/* Active state for leaderboard fab */
+.leaderboard-fab.active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+.leaderboard-fab.active svg { stroke: white; }
+.leaderboard-fab.active span { color: white; }
 
 /* ────────────────────────── LIST VIEW ────────────────────────── */
 .list-panel { overflow-y: auto; padding-bottom: 20px; }
@@ -967,11 +995,11 @@ input { font-family: var(--font); }
   .list-panel { padding: 16px; }
 }
 
-/* NammaKasa on desktop: centered overlays */
+/* Desktop overlays: centered bottom-sheets, full-width stats */
 @media (min-width: 768px) {
   .overlay .bottom-sheet { max-width: 560px; }
-  .stats-panel { max-width: 560px; left: 50%; transform: translateX(-50%) translateY(calc(100% - 170px)); }
-  .stats-panel.expanded { transform: translateX(-50%) translateY(0); }
+  /* Stats panel stays full-width — like NammaKasa */
+  .stats-panel { padding: 0 40px 100px; }
   .bottom-bar { max-width: 480px; left: 50%; transform: translateX(-50%); }
   .map-info-panel { bottom: 84px; left: 24px; max-width: 300px; }
 }

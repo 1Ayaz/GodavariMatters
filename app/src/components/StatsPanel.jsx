@@ -1,11 +1,10 @@
-import { useMemo, useRef, useState, useCallback } from 'react'
+import { useMemo, useRef, useCallback } from 'react'
 import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
 
 export default function StatsPanel() {
-  const { state } = useApp()
+  const { state, actions } = useApp()
   const lang = state.lang || 'en'
-  const [expanded, setExpanded] = useState(false)
   const startY = useRef(0)
   const isDragging = useRef(false)
 
@@ -15,7 +14,7 @@ export default function StatsPanel() {
     const resolved = all.filter(r => r.status === 'resolved').length
     const rate = all.length > 0 ? ((resolved / all.length) * 100).toFixed(1) : '0'
 
-    // Group by area for leaderboard (NammaKasa: "WORST WARDS BY REPORTS")
+    // Group by area for leaderboard
     const areaMap = {}
     all.forEach(r => {
       const area = r.assigned_area || 'Unknown'
@@ -26,14 +25,14 @@ export default function StatsPanel() {
 
     const leaderboard = Object.values(areaMap)
       .sort((a, b) => b.total - a.total)
-      .slice(0, 10)
+      .slice(0, 15)
 
     const maxCount = leaderboard[0]?.total || 1
 
     return { unresolved, resolved, rate, leaderboard, maxCount, total: all.length }
   }, [state.reports])
 
-  // Touch drag handlers for slide-up behavior
+  // Swipe-down to close
   const handleTouchStart = useCallback((e) => {
     startY.current = e.touches[0].clientY
     isDragging.current = true
@@ -43,64 +42,68 @@ export default function StatsPanel() {
     if (!isDragging.current) return
     isDragging.current = false
     const endY = e.changedTouches[0].clientY
-    const diff = startY.current - endY
-    if (diff > 50) setExpanded(true)
-    else if (diff < -50) setExpanded(false)
-  }, [])
+    const diff = endY - startY.current
+    // Swipe down > 80px = close
+    if (diff > 80) actions.toggleStats()
+  }, [actions])
 
-  const handleClick = useCallback(() => {
-    setExpanded(prev => !prev)
-  }, [])
-
-  // Only show on map view
-  if (state.activeView !== 'map') return null
+  // Don't render at all when hidden — completely gone from DOM
+  if (!state.showStats || state.activeView !== 'map') return null
 
   return (
-    <div
-      className={`stats-panel${expanded ? ' expanded' : ''}`}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div className="drag-handle" onClick={handleClick} />
-      
-      {/* NammaKasa-style stat cards */}
-      <div className="stats-cards">
-        <div className="stat-card unresolved-card">
-          <span className="stat-number">{stats.unresolved.toLocaleString()}</span>
-          <span className="stat-label">{t('unresolved', lang)}</span>
-        </div>
-        <div className="stat-card resolved-card">
-          <span className="stat-number">{stats.resolved.toLocaleString()}</span>
-          <span className="stat-label">{t('resolved', lang)}</span>
-        </div>
-        <div className="stat-card rate-card">
-          <span className="stat-number">{stats.rate}<small>%</small></span>
-          <span className="stat-label">{t('fixed_rate', lang)}</span>
-        </div>
-      </div>
+    <>
+      {/* Backdrop overlay — click to close */}
+      <div className="stats-backdrop" onClick={() => actions.toggleStats()} />
 
-      {/* Worst Wards leaderboard (NammaKasa: "WORST WARDS BY REPORTS") */}
-      <h3 className="section-title" style={{ marginTop: 4 }}>
-        {t('worst_wards', lang)}
-      </h3>
-      {stats.leaderboard.map((item, i) => (
-        <div key={item.name} className="lb-item">
-          <span className={`lb-rank${i < 3 ? ' top3' : ''}`}>{item.total}</span>
-          <div className="lb-info">
-            <div className="lb-name">{item.name}</div>
-            <div className="lb-ward">
-              {item.unresolved} {t('unresolved', lang).toLowerCase()}
-            </div>
-            <div className="lb-bar" style={{ width: `${(item.total / stats.maxCount) * 100}%` }} />
+      <div
+        className="stats-panel visible"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Drag handle */}
+        <div className="drag-handle" onClick={() => actions.toggleStats()} />
+
+        {/* Stat cards — NammaKasa style: full-width, big numbers */}
+        <div className="stats-cards">
+          <div className="stat-card unresolved-card">
+            <span className="stat-number">{stats.unresolved.toLocaleString()}</span>
+            <span className="stat-label">{t('unresolved', lang)}</span>
+          </div>
+          <div className="stat-card resolved-card">
+            <span className="stat-number">{stats.resolved.toLocaleString()}</span>
+            <span className="stat-label">{t('resolved', lang)}</span>
+          </div>
+          <div className="stat-card rate-card">
+            <span className="stat-number">{stats.rate}<small>%</small></span>
+            <span className="stat-label">{t('fixed_rate', lang)}</span>
           </div>
         </div>
-      ))}
 
-      {stats.leaderboard.length === 0 && (
-        <p style={{ color: '#9ca3af', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>
-          {t('no_reports_yet', lang)}
-        </p>
-      )}
-    </div>
+        {/* Worst Wards leaderboard */}
+        <h3 className="section-title">{t('worst_wards', lang)}</h3>
+
+        <div className="lb-list">
+          {stats.leaderboard.map((item, i) => (
+            <div key={item.name} className="lb-item">
+              <span className={`lb-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
+              <div className="lb-info">
+                <div className="lb-name">{item.name}</div>
+                <div className="lb-ward">
+                  {item.unresolved} {t('unresolved', lang).toLowerCase()} · {item.type === 'urban' ? t('sachivalayam', lang) : t('rural', lang)}
+                </div>
+                <div className="lb-bar" style={{ width: `${(item.total / stats.maxCount) * 100}%` }} />
+              </div>
+              <span className="lb-count">{item.total}</span>
+            </div>
+          ))}
+
+          {stats.leaderboard.length === 0 && (
+            <div className="lb-empty">
+              <p>{t('no_reports_yet', lang)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }

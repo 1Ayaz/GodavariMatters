@@ -36,10 +36,10 @@ export default function BottomBar() {
           )}
           {isMobile ? t('report_garbage', lang) : t('scan_qr', lang)}
         </button>
-        <button className="leaderboard-fab" onClick={() => {
-          const panel = document.querySelector('.stats-panel')
-          if (panel) panel.classList.toggle('expanded')
-        }}>
+        <button
+          className={`leaderboard-fab${state.showStats ? ' active' : ''}`}
+          onClick={() => actions.toggleStats()}
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="13" width="5" height="9"/><rect x="9.5" y="5" width="5" height="17"/><rect x="17" y="9" width="5" height="13"/></svg>
           <span>{totalReports}</span>
         </button>

@@ -26,6 +26,7 @@ const initialState = {
   selectedLeader: null,
   showReportForm: false,
   showCleanedForm: false,
+  showStats: false,
   userLocation: null,
   lang: typeof window !== 'undefined' ? (localStorage.getItem('gm_lang') || 'en') : 'en',
 }
@@ -56,6 +57,8 @@ function reducer(state, action) {
       return { ...state, showReportForm: action.show }
     case 'SHOW_CLEANED_FORM':
       return { ...state, showCleanedForm: action.show }
+    case 'TOGGLE_STATS':
+      return { ...state, showStats: !state.showStats }
     case 'SET_USER_LOCATION':
       return { ...state, userLocation: action.location }
     case 'DISMISS_SPLASH':
@@ -139,6 +142,7 @@ export function AppProvider({ children }) {
     selectLeader: (leader) => dispatch({ type: 'SELECT_LEADER', leader }),
     showReportForm: (show) => dispatch({ type: 'SHOW_REPORT_FORM', show }),
     showCleanedForm: (show) => dispatch({ type: 'SHOW_CLEANED_FORM', show }),
+    toggleStats: () => dispatch({ type: 'TOGGLE_STATS' }),
     setUserLocation: (location) => dispatch({ type: 'SET_USER_LOCATION', location }),
     dismissSplash: () => dispatch({ type: 'DISMISS_SPLASH' }),
 
