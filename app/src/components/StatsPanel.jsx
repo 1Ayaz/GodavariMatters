@@ -1,6 +1,7 @@
 import { useMemo, useRef, useCallback } from 'react'
 import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
+import { displayName } from '../lib/names'
 
 export default function StatsPanel() {
   const { state, actions } = useApp()
@@ -13,12 +14,14 @@ export default function StatsPanel() {
     const unresolved = all.filter(r => r.status !== 'resolved').length
     const resolved = all.filter(r => r.status === 'resolved').length
     const rate = all.length > 0 ? ((resolved / all.length) * 100).toFixed(1) : '0'
+    const urbanCount = all.filter(r => r.area_type === 'urban').length
+    const ruralCount = all.filter(r => r.area_type !== 'urban').length
 
     // Group by area for leaderboard
     const areaMap = {}
     all.forEach(r => {
       const area = r.assigned_area || 'Unknown'
-      if (!areaMap[area]) areaMap[area] = { name: area, type: r.area_type, total: 0, unresolved: 0 }
+      if (!areaMap[area]) areaMap[area] = { name: area, displayName: displayName(area), type: r.area_type, total: 0, unresolved: 0 }
       areaMap[area].total++
       if (r.status !== 'resolved') areaMap[area].unresolved++
     })
@@ -29,7 +32,7 @@ export default function StatsPanel() {
 
     const maxCount = leaderboard[0]?.total || 1
 
-    return { unresolved, resolved, rate, leaderboard, maxCount, total: all.length }
+    return { unresolved, resolved, rate, leaderboard, maxCount, total: all.length, urbanCount, ruralCount }
   }, [state.reports])
 
   // Swipe-down to close
@@ -87,7 +90,7 @@ export default function StatsPanel() {
             <div key={item.name} className="lb-item">
               <span className={`lb-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
               <div className="lb-info">
-                <div className="lb-name">{item.name}</div>
+                <div className="lb-name">{item.displayName}</div>
                 <div className="lb-ward">
                   {item.unresolved} {t('unresolved', lang).toLowerCase()} · {item.type === 'urban' ? t('sachivalayam', lang) : t('rural', lang)}
                 </div>

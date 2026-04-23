@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../lib/store'
+import { displayName } from '../lib/names'
 
 function WardRow({ area, reports, onReportClick }) {
   const [expanded, setExpanded] = useState(false)
@@ -10,7 +11,7 @@ function WardRow({ area, reports, onReportClick }) {
       <div className={`ward-row${expanded ? ' expanded' : ''}`} onClick={() => setExpanded(!expanded)}>
         <div className="ward-count-badge">{reports.length}</div>
         <div className="ward-info">
-          <div className="ward-name">{area.name}</div>
+          <div className="ward-name">{displayName(area.name)}</div>
           <div className="ward-detail">{unresolved} unresolved · {area.type === 'urban' ? 'Sachivalayam' : 'Village'}</div>
         </div>
         <div className="ward-expand">

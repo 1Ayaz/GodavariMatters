@@ -67,8 +67,9 @@ function checkDuplicateGPS(lat, lng) {
 
 /**
  * Upload a report image.
- * Priority: Cloudinary (25GB free) > Supabase Storage (1GB free) > local blob
- * Images are aggressively compressed: 800px max, 55% JPEG quality (~40-60KB each)
+ * Supabase Storage (pollution_snaps bucket) is the primary target.
+ * Falls back to base64 ONLY in offline/demo mode — warns the user.
+ * Images are compressed: 1200px max, 85% JPEG quality.
  */
 export async function uploadImage(file) {
   // Security validations
@@ -77,25 +78,31 @@ export async function uploadImage(file) {
   // Compress aggressively to save storage
   const compressed = await compressImage(file)
   
-  // We will upload directly to Supabase Storage (pollution_snaps bucket)
-  
-
+  // Primary: Supabase Storage
   if (supabase) {
     const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
     const { data, error } = await supabase.storage
       .from('pollution_snaps')
       .upload(fileName, compressed, { contentType: 'image/jpeg', upsert: false })
     
-    if (error) throw error
+    if (error) {
+      console.error('Supabase storage upload failed:', error)
+      throw new Error(`Image upload failed: ${error.message}. Please check your internet connection and try again.`)
+    }
     
-    const { data: { publicUrl } } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from('pollution_snaps')
       .getPublicUrl(fileName)
     
-    return { url: publicUrl, isLocal: false }
+    if (!urlData?.publicUrl) {
+      throw new Error('Failed to generate public URL for uploaded image. The storage bucket may not have public access enabled.')
+    }
+    
+    return { url: urlData.publicUrl, isLocal: false }
   }
   
-  // Last resort: base64 (demo mode, persists in localStorage)
+  // Fallback: base64 (DEMO MODE ONLY — warns user)
+  console.warn('GodavariMatters: No Supabase configured. Images stored locally — NOT visible on other devices!')
   const base64 = await new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onloadend = () => resolve(reader.result)

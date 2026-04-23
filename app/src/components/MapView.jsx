@@ -4,6 +4,7 @@ import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
 import { t } from '../lib/i18n'
+import { displayName, normalizeKey } from '../lib/names'
 
 // Fix Leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl
@@ -60,13 +61,26 @@ function getCentroid(feature) {
   return [sum[1] / n, sum[0] / n] // [lat, lng]
 }
 
-// ── Ward count bubbles (only when complaints > 0) ──
-function WardBubbles({ boundaries, reportsByArea }) {
+// ── Time ago helper ──
+function timeAgo(date) {
+  const now = Date.now()
+  const d = new Date(date).getTime()
+  const diff = Math.floor((now - d) / 1000)
+  if (diff < 60) return 'Just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  const days = Math.floor(diff / 86400)
+  if (days === 1) return 'Yesterday'
+  return `${days}d ago`
+}
+
+// ── Ward count bubbles — clickable! ──
+function WardBubbles({ boundaries, reportsByArea, onBubbleClick }) {
   if (!boundaries) return null
 
   return boundaries.features.map((feature) => {
     const name = feature.properties.name || 'Unknown'
-    let matchName = name.toUpperCase().replace(/\s+/g, '')
+    let matchName = normalizeKey(name)
     if (matchName.includes('SESHAYYAMETTA')) matchName = 'SESHAYYAMETTA'
     const count = reportsByArea[matchName] || 0
     if (count === 0) return null
@@ -92,7 +106,23 @@ function WardBubbles({ boundaries, reportsByArea }) {
     })
 
     return (
-      <Marker key={name} position={center} icon={icon} />
+      <Marker 
+        key={name} 
+        position={center} 
+        icon={icon}
+        eventHandlers={{
+          click: (e) => {
+            L.DomEvent.stopPropagation(e)
+            onBubbleClick?.({
+              name,
+              matchName,
+              count,
+              isUrban: feature.properties.type === 'urban_sachivalayam',
+              code: feature.properties.code,
+            })
+          }
+        }}
+      />
     )
   })
 }
@@ -110,7 +140,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   // Choropleth style — both urban and rural use same red accent
   // Internal borders are nearly invisible; only heatmap fill shows
   const getUrbanStyle = useCallback((feature) => {
-    let name = (feature.properties.name || '').toUpperCase().replace(/\s+/g, '')
+    let name = normalizeKey(feature.properties.name || '')
     if (name.includes('SESHAYYAMETTA')) name = 'SESHAYYAMETTA'
     const count = reportsByArea?.[name] || 0
     let fillOpacity = 0
@@ -135,15 +165,15 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   const selectedUrbanStyle = {
     color: '#E8390E',
-    weight: 2,
-    opacity: 1,
+    weight: 1.5,
+    opacity: 0.9,
     fillColor: '#E8390E',
-    fillOpacity: 0.25,
+    fillOpacity: 0.2,
   }
 
   // Rural uses same style as urban
   const getRuralStyle = useCallback((feature) => {
-    const name = (feature.properties.name || '').toUpperCase()
+    const name = normalizeKey(feature.properties.name || '')
     const count = reportsByArea?.[name] || 0
     let fillOpacity = 0
     if (count > 0) fillOpacity = Math.min(0.6, 0.05 + (count * 0.05))
@@ -167,15 +197,16 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   const selectedRuralStyle = {
     color: '#E8390E',
-    weight: 2,
-    opacity: 1,
+    weight: 1.5,
+    opacity: 0.9,
     fillColor: '#E8390E',
-    fillOpacity: 0.25,
+    fillOpacity: 0.2,
   }
 
   const onEachUrban = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
-    const count = reportsByArea?.[name] || 0
+    const matchName = normalizeKey(name)
+    const count = reportsByArea?.[matchName] || 0
 
     layer.on({
       mouseover: (e) => {
@@ -186,7 +217,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         l.setStyle(hoverUrbanStyle)
         l.bringToFront()
         hoveredRef.current = l
-        onHover?.({ name, isUrban: true, count, code: feature.properties.code, ...feature.properties })
+        onHover?.({ ...feature.properties, name: displayName(name), rawName: name, isUrban: true, count, code: feature.properties.code })
       },
       mouseout: (e) => {
         e.target.setStyle(getUrbanStyle(feature))
@@ -198,7 +229,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedUrbanStyle)
         onSelect?.({
-          name, 
+          name: displayName(name), 
+          rawName: name,
           isUrban: true, 
           count, 
           code: feature.properties.code,
@@ -211,7 +243,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
-    const count = reportsByArea?.[name] || 0
+    const matchName = normalizeKey(name)
+    const count = reportsByArea?.[matchName] || 0
 
     layer.on({
       mouseover: (e) => {
@@ -223,7 +256,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         l.setStyle(hoverRuralStyle)
         l.bringToFront()
         hoveredRef.current = l
-        onHover?.({ name, isUrban: false, count, code: feature.properties.code, ...feature.properties })
+        onHover?.({ ...feature.properties, name: displayName(name), rawName: name, isUrban: false, count, code: feature.properties.code })
       },
       mouseout: (e) => {
         e.target.setStyle(getRuralStyle(feature))
@@ -235,7 +268,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedRuralStyle)
         onSelect?.({
-          name, 
+          name: displayName(name), 
+          rawName: name,
           isUrban: false, 
           count, 
           code: feature.properties.code,
@@ -310,8 +344,8 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   )
 }
 
-// ── Report dot markers ──
-function ReportMarkers() {
+// ── Report dot markers with mini preview ──
+function ReportMarkers({ onReportPreview }) {
   const { filteredReports, actions } = useApp()
   return filteredReports.map(report => {
     const isResolved = report.status === 'resolved'
@@ -326,12 +360,122 @@ function ReportMarkers() {
         eventHandlers={{
           click: (e) => {
             L.DomEvent.stopPropagation(e)
-            actions.selectReport(report)
+            onReportPreview?.(report)
           }
         }}
       />
     )
   })
+}
+
+// ── Ward Complaints Sliding Panel (new!) ──
+function WardComplaintsPanel({ wardName, rawName, reports, onClose, onReportClick }) {
+  const lang = 'en'
+  const panelRef = useRef(null)
+  const startY = useRef(0)
+
+  // Filter reports for this ward — match by normalized name
+  const wardKey = normalizeKey(rawName || wardName)
+  const wardReports = useMemo(() => {
+    return reports.filter(r => {
+      let area = normalizeKey(r.assigned_area || '')
+      if (area.includes('SESHAYYAMETTA')) area = 'SESHAYYAMETTA'
+      let wk = wardKey
+      if (wk.includes('SESHAYYAMETTA')) wk = 'SESHAYYAMETTA'
+      return area === wk
+    })
+  }, [reports, wardKey])
+
+  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY }
+  const handleTouchEnd = (e) => {
+    const diff = e.changedTouches[0].clientY - startY.current
+    if (diff > 80) onClose()
+  }
+
+  return (
+    <div className="ward-complaints-backdrop" onClick={onClose}>
+      <div 
+        className="ward-complaints-panel" 
+        ref={panelRef}
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Drag handle */}
+        <div className="wcp-drag-handle" onClick={onClose} />
+        
+        {/* Header */}
+        <div className="wcp-header">
+          <div className="wcp-header-left">
+            <h3 className="wcp-title">{displayName(rawName || wardName)}</h3>
+            <span className="wcp-subtitle">{wardReports.length} {wardReports.length === 1 ? 'complaint' : 'complaints'}</span>
+          </div>
+          <button className="wcp-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Reports List */}
+        <div className="wcp-list">
+          {wardReports.length === 0 ? (
+            <div className="wcp-empty">
+              <span style={{ fontSize: 32, marginBottom: 8 }}>📍</span>
+              <p>No complaints in this area yet.</p>
+            </div>
+          ) : (
+            wardReports.map(r => {
+              const isResolved = r.status === 'resolved'
+              return (
+                <div key={r.id} className="wcp-item" onClick={() => onReportClick(r)}>
+                  <img src={r.image_url} alt="" className="wcp-item-img" onError={(e) => { e.target.style.display = 'none' }} />
+                  <div className="wcp-item-info">
+                    <div className="wcp-item-type">{r.waste_type || 'Report'}</div>
+                    <div className="wcp-item-landmark">{r.landmark || 'No landmark'}</div>
+                    <div className="wcp-item-meta">
+                      <span className={`wcp-severity ${r.severity}`}>{r.severity}</span>
+                      <span className="wcp-time">{timeAgo(r.created_at)}</span>
+                    </div>
+                  </div>
+                  <div className="wcp-item-seen">
+                    {isResolved ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    ) : (
+                      <>
+                        <span className="wcp-seen-num">{r.seen_count || 0}</span>
+                        <span className="wcp-seen-label">seen</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Report Preview Card (mini card at bottom of map) ──
+function ReportPreviewCard({ report, onOpen, onClose }) {
+  if (!report) return null
+  const isResolved = report.status === 'resolved'
+  const color = isResolved ? '#16a34a' : (SEVERITY_COLORS[report.severity] || '#f97316')
+
+  return (
+    <div className="report-preview-card" onClick={onOpen}>
+      <div className="rpc-indicator" style={{ background: color }} />
+      <img src={report.image_url} alt="" className="rpc-img" onError={(e) => { e.target.style.display = 'none' }} />
+      <div className="rpc-info">
+        <div className="rpc-type">{report.waste_type || 'Report'}</div>
+        <div className="rpc-landmark">{report.landmark || displayName(report.assigned_area)}</div>
+        <div className="rpc-meta">
+          <span className={`wcp-severity ${report.severity}`}>{report.severity}</span>
+          <span className="wcp-time">{timeAgo(report.created_at)}</span>
+          {report.seen_count > 0 && <span className="wcp-time">👁 {report.seen_count}</span>}
+        </div>
+      </div>
+      <button className="rpc-close" onClick={(e) => { e.stopPropagation(); onClose() }}>✕</button>
+    </div>
+  )
 }
 
 // ── MAIN MAP VIEW ──
@@ -341,6 +485,8 @@ export default function MapView() {
   const [cityLimits, setCityLimits] = useState(null)
   const [hoveredArea, setHoveredArea] = useState(null)
   const [selectedWard, setSelectedWard] = useState(null)
+  const [complaintsPanel, setComplaintsPanel] = useState(null) // { name, rawName }
+  const [previewReport, setPreviewReport] = useState(null) // mini preview
 
   useEffect(() => {
     loadData().then(({ boundaries }) => setBoundaries(boundaries))
@@ -351,7 +497,7 @@ export default function MapView() {
     const map = {}
     state.reports.forEach(r => {
       // Normalize: UpperCase and remove ALL spaces (fixes KAMBALA PETA vs KAMBALAPETA)
-      let area = (r.assigned_area || 'Unknown').toUpperCase().replace(/\s+/g, '')
+      let area = normalizeKey(r.assigned_area || 'Unknown')
       // Group SESHAYYAMETTA-02 under SESHAYYAMETTA for map visualization
       if (area.includes('SESHAYYAMETTA')) area = 'SESHAYYAMETTA'
       map[area] = (map[area] || 0) + 1
@@ -367,34 +513,73 @@ export default function MapView() {
 
   const infoData = selectedWard || hoveredArea
 
+  const handleWardSelect = (ward) => {
+    setSelectedWard(ward)
+    setPreviewReport(null) // close any preview
+  }
+
+  const handleBubbleClick = (data) => {
+    // Open the complaints sliding panel directly
+    setComplaintsPanel({ name: data.name, rawName: data.name })
+    setSelectedWard(null)
+    setPreviewReport(null)
+  }
+
+  const handleReportPreview = (report) => {
+    if (state.isMobile) {
+      // On mobile: show mini preview card at bottom
+      setPreviewReport(report)
+      setSelectedWard(null)
+      setComplaintsPanel(null)
+    } else {
+      // On desktop: open full detail
+      actions.selectReport(report)
+    }
+  }
+
   const handleViewReports = () => {
-    if (selectedWard) { actions.setView('list'); setSelectedWard(null) }
+    if (selectedWard) {
+      // Open complaints panel inline instead of switching to list view
+      setComplaintsPanel({ name: selectedWard.name, rawName: selectedWard.rawName || selectedWard.name })
+      setSelectedWard(null)
+    }
   }
 
   const handleMapClick = () => {
     if (selectedWard) setSelectedWard(null)
+    if (previewReport) setPreviewReport(null)
   }
 
   return (
     <div className="view-panel map-panel active">
       <MapContainer center={RJY_CENTER} zoom={RJY_ZOOM} minZoom={11} maxZoom={19}
         className="map-container" zoomControl={false} attributionControl={false}
+        preferCanvas={true}
         whenReady={(e) => {
           e.target.on('click', handleMapClick)
         }}>
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
+        <TileLayer 
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" 
+          maxZoom={19}
+          updateWhenZooming={false}
+          updateWhenIdle={true}
+        />
         <InteractiveBoundaryLayer
           onHover={setHoveredArea}
-          onSelect={setSelectedWard}
+          onSelect={handleWardSelect}
           reportsByArea={reportsByArea}
           cityLimits={cityLimits}
         />
-        <WardBubbles boundaries={boundaries} reportsByArea={reportsByArea} />
-        <ReportMarkers />
+        <WardBubbles 
+          boundaries={boundaries} 
+          reportsByArea={reportsByArea} 
+          onBubbleClick={handleBubbleClick}
+        />
+        <ReportMarkers onReportPreview={handleReportPreview} />
         <MapControls />
       </MapContainer>
 
-      {/* Inline stats badges */}
+      {/* Inline stats badges — repositioned to avoid topbar overlap */}
       <div className="map-stats-badges">
         <div className="map-badge badge-active">
           <span className="badge-num">{totalActive}</span>
@@ -413,7 +598,7 @@ export default function MapView() {
           <div className="mip-content" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                <div className="mip-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{infoData.name}</div>
+                <div className="mip-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName(infoData.name)}</div>
                 <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
               </div>
               <div className="mip-count" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: '1.1' }}>
@@ -435,6 +620,32 @@ export default function MapView() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Mini report preview card (mobile) */}
+      {previewReport && (
+        <ReportPreviewCard 
+          report={previewReport}
+          onOpen={() => {
+            actions.selectReport(previewReport)
+            setPreviewReport(null)
+          }}
+          onClose={() => setPreviewReport(null)}
+        />
+      )}
+
+      {/* Ward complaints sliding panel */}
+      {complaintsPanel && (
+        <WardComplaintsPanel
+          wardName={complaintsPanel.name}
+          rawName={complaintsPanel.rawName}
+          reports={state.reports}
+          onClose={() => setComplaintsPanel(null)}
+          onReportClick={(r) => {
+            setComplaintsPanel(null)
+            actions.selectReport(r)
+          }}
+        />
       )}
     </div>
   )
