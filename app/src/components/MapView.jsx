@@ -107,18 +107,19 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
 
-  // Choropleth heatmap style
+  // Choropleth style — both urban and rural use same red accent
+  // Internal borders are nearly invisible; only heatmap fill shows
   const getUrbanStyle = useCallback((feature) => {
     let name = (feature.properties.name || '').toUpperCase().replace(/\s+/g, '')
     if (name.includes('SESHAYYAMETTA')) name = 'SESHAYYAMETTA'
     const count = reportsByArea?.[name] || 0
     let fillOpacity = 0
-    if (count > 0) fillOpacity = Math.min(0.7, 0.05 + (count * 0.05))
+    if (count > 0) fillOpacity = Math.min(0.6, 0.05 + (count * 0.05))
     
     return {
-      color: count > 0 ? '#E8390E' : 'rgba(0,0,0,0.15)', // Darker stroke for light map
-      weight: count > 0 ? 1.5 : 0.8,
-      opacity: count > 0 ? 0.8 : 1,
+      color: 'rgba(0,0,0,0.06)',
+      weight: 0.5,
+      opacity: 0.3,
       fillColor: '#E8390E',
       fillOpacity: fillOpacity,
     }
@@ -126,31 +127,31 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   const hoverUrbanStyle = {
     color: '#E8390E',
-    weight: 2,
-    opacity: 1,
+    weight: 1.5,
+    opacity: 0.8,
     fillColor: '#E8390E',
-    fillOpacity: 0.3,
+    fillOpacity: 0.15,
   }
 
   const selectedUrbanStyle = {
     color: '#E8390E',
-    weight: 3,
+    weight: 2,
     opacity: 1,
     fillColor: '#E8390E',
-    fillOpacity: 0.4,
+    fillOpacity: 0.25,
   }
 
-  // ── Rural Styles ──
+  // Rural uses same style as urban
   const getRuralStyle = useCallback((feature) => {
     const name = (feature.properties.name || '').toUpperCase()
     const count = reportsByArea?.[name] || 0
-    let fillOpacity = 0.05
-    if (count > 0) fillOpacity = Math.min(0.5, 0.1 + (count * 0.05))
+    let fillOpacity = 0
+    if (count > 0) fillOpacity = Math.min(0.6, 0.05 + (count * 0.05))
     
     return {
-      color: count > 0 ? '#E8390E' : 'rgba(0,0,0,0.15)', // Red accent, dark gray for 0
-      weight: count > 0 ? 1.5 : 0.8,
-      opacity: count > 0 ? 0.9 : 0.4,
+      color: 'rgba(0,0,0,0.06)',
+      weight: 0.5,
+      opacity: 0.3,
       fillColor: '#E8390E',
       fillOpacity: fillOpacity,
     }
@@ -158,18 +159,18 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
   const hoverRuralStyle = {
     color: '#E8390E',
-    weight: 2,
-    opacity: 1,
+    weight: 1.5,
+    opacity: 0.8,
     fillColor: '#E8390E',
-    fillOpacity: 0.2,
+    fillOpacity: 0.15,
   }
 
   const selectedRuralStyle = {
     color: '#E8390E',
-    weight: 3,
+    weight: 2,
     opacity: 1,
     fillColor: '#E8390E',
-    fillOpacity: 0.35,
+    fillOpacity: 0.25,
   }
 
   const onEachUrban = useCallback((feature, layer) => {
@@ -197,7 +198,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedUrbanStyle)
         
-        actions.selectWard({ 
+        onSelect?.({
           name, 
           isUrban: true, 
           count, 
@@ -206,7 +207,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         })
       },
     })
-  }, [reportsByArea, onHover, actions, getUrbanStyle])
+  }, [reportsByArea, onHover, onSelect, getUrbanStyle])
 
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
@@ -234,7 +235,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         const l = e.target
         l.setStyle(selectedRuralStyle)
         
-        actions.selectWard({ 
+        onSelect?.({
           name, 
           isUrban: false, 
           count, 
@@ -243,39 +244,22 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
         })
       },
     })
-  }, [reportsByArea, onHover, actions, getRuralStyle, getUrbanStyle])
+  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle])
 
-  const { rural, urban, unifiedCity } = useMemo(() => {
-    if (!geojson) return { rural: null, urban: null, unifiedCity: null }
-    const r = { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') }
-    const u = { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
-    
-    // Create unified city boundary using Turf
-    let unified = null
-    try {
-      if (u.features.length > 0 && window.turf) {
-        let base = u.features[0]
-        for (let i = 1; i < u.features.length; i++) {
-          try {
-            base = window.turf.union(base, u.features[i])
-          } catch (e) { /* skip problematic geoms */ }
-        }
-        // Smooth, buffer, and simplify to fix 'jaggedness' and close tiny gaps
-        let buffered = window.turf.buffer(base, 0.01, { units: 'kilometers' })
-        let clean = window.turf.buffer(buffered, -0.01, { units: 'kilometers' })
-        unified = window.turf.simplify(clean, { tolerance: 0.0005, highQuality: true })
-      }
-    } catch (e) { console.warn('Turf union failed:', e) }
-
-    return { rural: r, urban: u, unifiedCity: unified }
+  const { rural, urban } = useMemo(() => {
+    if (!geojson) return { rural: null, urban: null }
+    return {
+      rural: { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') },
+      urban: { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
+    }
   }, [geojson])
 
-  // City Limits boundary style (Dashed red line)
+  // City Limits boundary style — clean dashed red outline
   const cityLimitStyle = {
     color: '#E8390E',
-    weight: 4,
-    dashArray: '12, 16',
-    opacity: 0.9,
+    weight: 3,
+    dashArray: '10, 8',
+    opacity: 0.8,
     fillColor: 'transparent',
     fillOpacity: 0,
     interactive: false
@@ -287,7 +271,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     <>
       <GeoJSON key="rural" data={rural} style={getRuralStyle} onEachFeature={onEachRural} />
       <GeoJSON key="urban" data={urban} style={getUrbanStyle} onEachFeature={onEachUrban} />
-      {unifiedCity && <GeoJSON key="city_limits" data={unifiedCity} style={() => cityLimitStyle} />}
+      {cityLimits && <GeoJSON key="city_limits" data={cityLimits} style={() => cityLimitStyle} />}
     </>
   )
 }

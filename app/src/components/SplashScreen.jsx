@@ -27,20 +27,16 @@ export default function SplashScreen({ onDismiss }) {
   if (!visible) return null
 
   return (
-    <div className={`splash-screen${fadeOut ? ' fade-out' : ''}`} onClick={dismiss} style={{
-      backgroundImage: 'linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url(/hero.png)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    }}>
+    <div className={`splash-screen${fadeOut ? ' fade-out' : ''}`} onClick={dismiss}>
       <div className="splash-content">
         <div className="splash-badge">RAJAMAHENDRAVARAM</div>
         <h1 className="splash-title">
-          Rajamahendravaram is <br />
-          <span className="splash-highlight">Drowning in Waste.</span>
+          Our City Deserves <br />
+          <span className="splash-highlight">Better Sanitation.</span>
         </h1>
         <p className="splash-desc">
-          ₹574 Crore Budget. ₹88 Crore for Godavari. <br />
-          Where is the clean city we were promised?
+          ₹574 Crore Annual Budget. ₹88 Crore for Godavari Rejuvenation. <br />
+          Yet garbage piles up across our neighbourhoods.
         </p>
 
         <div className="splash-data-grid">
@@ -49,7 +45,7 @@ export default function SplashScreen({ onDismiss }) {
             <span className="sdc-value sdc-accent">₹574.6 Cr</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Godavari Project</span>
+            <span className="sdc-label">Sanitation Allocation</span>
             <span className="sdc-value">₹88.4 Cr</span>
           </div>
           <div className="splash-data-card">
@@ -57,19 +53,19 @@ export default function SplashScreen({ onDismiss }) {
             <span className="sdc-value sdc-accent">₹3.0 Cr</span>
           </div>
           <div className="splash-data-card">
-            <span className="sdc-label">Tax Collection</span>
+            <span className="sdc-label">Property Tax Collection</span>
             <span className="sdc-value">82%+</span>
           </div>
         </div>
 
         <p className="splash-sub">
-          Stop ignoring the garbage. Start tracking the accountability. <br />
-          Hold your Sachivalayam officials responsible today.
+          Report garbage issues in your area. <br />
+          Track civic complaints across all 50 Sachivalayams.
         </p>
         <div className="splash-cta">{t('splash_tap', lang)}</div>
       </div>
       <div className="splash-brand">
-        <span>Godavar<span className="splash-brand-accent">!</span>Matters</span>
+        <span>Godavar<span className="splash-brand-accent">i</span>Matters</span>
       </div>
     </div>
   )

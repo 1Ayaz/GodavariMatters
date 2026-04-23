@@ -18,8 +18,8 @@ export default function DetailSheet() {
 
   if (!report && !selectedWard) return null
 
-  const isResolved = report.status === 'resolved'
-  const daysAgo = Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000))
+  const isResolved = report?.status === 'resolved'
+  const daysAgo = report ? Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000)) : 0
   const isUrban = jurisdiction?.type === 'urban'
   const complaintLabel = isUrban ? t('file_complaint', lang) : t('meekosam', lang)
 
