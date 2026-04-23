@@ -349,7 +349,7 @@ function ReportMarkers({ onReportPreview }) {
   const { filteredReports, actions } = useApp()
   return filteredReports.map(report => {
     const isResolved = report.status === 'resolved'
-    const isPending = report.status === 'pending_review'
+    const isPending = report.cleaned_image_url && !isResolved
     const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
     return (
       <CircleMarker

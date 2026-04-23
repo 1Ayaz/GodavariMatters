@@ -228,7 +228,6 @@ export async function markResolved(reportId, cleanedImageUrl) {
     const reports = JSON.parse(localStorage.getItem('gm_reports') || '[]')
     const idx = reports.findIndex(r => r.id === reportId)
     if (idx >= 0) {
-      reports[idx].status = 'pending_review'
       reports[idx].cleaned_image_url = cleanedImageUrl
       reports[idx].resolved_at = new Date().toISOString()
       localStorage.setItem('gm_reports', JSON.stringify(reports))
@@ -252,7 +251,6 @@ export async function markResolved(reportId, cleanedImageUrl) {
   const { data, error } = await supabase
     .from('reports')
     .update({
-      status: 'pending_review',
       cleaned_image_url: cleanedImageUrl,
       resolved_at: new Date().toISOString()
     })
