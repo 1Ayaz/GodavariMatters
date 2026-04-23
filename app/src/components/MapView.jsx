@@ -83,7 +83,7 @@ function WardBubbles({ boundaries, reportsByArea, onBubbleClick }) {
     let matchName = normalizeKey(name)
     if (matchName.includes('SESHAYYAMETTA')) matchName = 'SESHAYYAMETTA'
     const stats = reportsByArea[matchName]
-    const count = stats?.total || 0
+    const count = stats?.active || 0
     if (count === 0) return null
 
     const center = feature.properties.lat && feature.properties.lng 
@@ -509,9 +509,13 @@ export default function MapView() {
     state.reports.forEach(r => {
       let area = normalizeKey(r.assigned_area || 'Unknown')
       if (area.includes('SESHAYYAMETTA')) area = 'SESHAYYAMETTA'
-      if (!map[area]) map[area] = { total: 0, resolved: 0 }
+      if (!map[area]) map[area] = { total: 0, resolved: 0, active: 0 }
       map[area].total++
-      if (r.status === 'resolved') map[area].resolved++
+      if (r.status === 'resolved') {
+        map[area].resolved++
+      } else {
+        map[area].active++
+      }
     })
     return map
   }, [state.reports])

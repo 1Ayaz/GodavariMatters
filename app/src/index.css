@@ -580,13 +580,15 @@ input { font-family: var(--font); }
 .before-after-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #000; }
 .ba-item { position: relative; }
 .ba-label {
-  position: absolute; top: 8px; left: 8px;
-  font-size: 9px; font-weight: 800; padding: 3px 6px;
-  border-radius: 4px; color: #fff; letter-spacing: 0.5px;
-  backdrop-filter: blur(4px); z-index: 5;
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: 900; padding: 4px 10px;
+  border-radius: 6px; color: #fff; letter-spacing: 1px;
+  backdrop-filter: blur(8px); z-index: 5;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
-.ba-label.before { background: rgba(0,0,0,0.6); }
-.ba-label.after { background: rgba(22,163,74,0.8); }
+.ba-label.before { background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.1); }
+.ba-label.after { background: rgba(22,163,74,0.9); border: 1px solid rgba(255,255,255,0.1); }
 
 .seen-btn {
   position: absolute; bottom: 12px; right: 12px;
