@@ -11,6 +11,7 @@ import DetailSheet from './components/DetailSheet'
 import LeaderSheet from './components/LeaderSheet'
 import CleanedSheet from './components/CleanedSheet'
 import 'leaflet/dist/leaflet.css'
+import StatsPanel from './components/StatsPanel'
 
 function AppContent() {
   const { state, actions } = useApp()
@@ -52,6 +53,7 @@ function AppContent() {
       <TopBar />
       <ViewSwitcher />
       <MapView />
+      <StatsPanel />
       <ListView />
       <BottomBar />
       <ReportSheet />

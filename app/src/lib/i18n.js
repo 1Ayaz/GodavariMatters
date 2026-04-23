@@ -93,6 +93,7 @@ const translations = {
 
     // Stats
     worst_areas: "WORST AREAS BY REPORTS",
+    worst_wards: "WORST WARDS BY REPORTS",
     fixed_rate: "FIXED RATE",
     no_reports_yet: "No reports yet. Be the first to report! 📸",
 
@@ -202,6 +203,7 @@ const translations = {
 
     // Stats
     worst_areas: "అత్యంత రిపోర్ట్‌లు ఉన్న ప్రాంతాలు",
+    worst_wards: "అత్యధిక రిపోర్ట్‌లు ఉన్న వార్డులు",
     fixed_rate: "పరిష్కార రేటు",
     no_reports_yet: "ఇంకా రిపోర్ట్‌లు లేవు. మొదటగా రిపోర్ట్ చేయండి! 📸",
 
