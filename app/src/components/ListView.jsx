@@ -74,9 +74,20 @@ export default function ListView() {
           />
         ))}
         {grouped.length === 0 && (
-          <p style={{ color: '#9ca3af', fontSize: '14px', textAlign: 'center', padding: '40px 0' }}>
-            No reports yet. Be the first! 📸
-          </p>
+          <div style={{ 
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '60px 24px', textAlign: 'center'
+          }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%', background: '#fef2f0',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+              fontSize: 36
+            }}>📸</div>
+            <p style={{ fontSize: 18, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>No Reports Yet</p>
+            <p style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5, maxWidth: 260 }}>
+              Be the first to report a garbage issue in your neighbourhood. Your report is 100% anonymous.
+            </p>
+          </div>
         )}
       </div>
     </div>

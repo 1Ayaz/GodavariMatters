@@ -866,21 +866,42 @@ input { font-family: var(--font); }
 
 /* ────────────────────────── RESPONSIVE — Mobile First adjustments ────────────────────────── */
 @media (max-width: 767px) {
-  .topbar { padding: 12px 14px; height: 64px; box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
-  .brand { font-size: 21px; letter-spacing: -0.8px; }
-  .version { font-size: 8px; padding: 1px 6px; }
-  .view-switcher { top: 64px; padding: 12px 14px 10px; border-top: none; }
-  .view-panel { top: 120px; bottom: 0; }
+  .topbar { padding: 10px 12px; height: 56px; box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .brand { font-size: 19px; letter-spacing: -0.8px; }
+  .version { font-size: 8px; padding: 1px 5px; }
+  .view-switcher { top: 56px; padding: 8px 12px 8px; border-top: none; }
+  .view-panel { top: 106px; bottom: 0; }
   .view-switcher { background: rgba(255,255,255,0.98); }
-  .map-stats-badges { top: 20px; left: 14px; }
+  .map-stats-badges { top: 12px; left: 10px; }
+  .map-badge { padding: 5px 10px; border-radius: 8px; }
+  .badge-num { font-size: 14px; }
+  .badge-label { font-size: 8px; letter-spacing: 0.3px; }
   
+  /* Compact filter dropdowns on mobile */
+  .dropdown-btn {
+    min-width: 90px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
+    border-radius: 8px;
+    box-shadow: none;
+  }
+  .filter-row { gap: 6px; }
+  .toggle-btn {
+    min-width: 48px;
+    height: 30px;
+    font-size: 11px;
+    padding: 0 10px;
+  }
+  .view-toggle { padding: 3px; border-radius: 10px; }
+
   /* Floating pill info panel on mobile */
   .map-info-panel {
     top: auto;
-    bottom: 100px;
+    bottom: 96px;
     left: 50%;
     transform: translateX(-50%);
-    width: 88%;
+    width: 90%;
     min-width: unset;
     border-radius: 16px;
     background: rgba(15, 15, 20, 0.88);
@@ -902,32 +923,48 @@ input { font-family: var(--font); }
     align-items: stretch;
     padding: 8px 12px;
   }
+  .mip-name { font-size: 14px; }
+  .mip-meta { font-size: 10px; }
   
   .stats-panel {
     max-height: 85vh;
-    padding-bottom: 30px;
+    padding-bottom: calc(30px + var(--safe-bottom));
     border-radius: 32px 32px 0 0;
     box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
   }
   
   .bottom-bar {
-    bottom: 12px;
-    left: 12px;
-    right: 12px;
+    bottom: calc(10px + var(--safe-bottom));
+    left: 10px;
+    right: 10px;
     padding: 8px 10px;
     border-radius: 18px;
-    background: rgba(255,255,255,0.92);
+    background: rgba(255,255,255,0.94);
   }
   .report-btn {
-    font-size: 14px;
-    padding: 12px 16px;
+    font-size: 13px;
+    padding: 12px 14px;
     border-radius: 12px;
+    gap: 8px;
   }
   .leaderboard-fab {
     width: 44px;
     height: 44px;
     border-radius: 12px;
   }
+
+  /* Better touch targets for severity pills */
+  .pill { padding: 12px; }
+  .wpill { padding: 8px 12px; font-size: 12px; }
+
+  /* Sheet improvements */
+  .sheet-header { padding: 16px 16px 10px; }
+  .sheet-header h2 { font-size: 18px; }
+  .sheet-body { padding: 14px 16px calc(32px + var(--safe-bottom)); }
+  .bottom-sheet { border-radius: 20px 20px 0 0; }
+
+  /* Empty list state */
+  .list-panel { padding: 16px; }
 }
 
 /* NammaKasa on desktop: centered overlays */
@@ -936,7 +973,7 @@ input { font-family: var(--font); }
   .stats-panel { max-width: 560px; left: 50%; transform: translateX(-50%) translateY(calc(100% - 170px)); }
   .stats-panel.expanded { transform: translateX(-50%) translateY(0); }
   .bottom-bar { max-width: 480px; left: 50%; transform: translateX(-50%); }
-  .map-info-panel { bottom: 84px; left: 24px; max-width: 280px; }
+  .map-info-panel { bottom: 84px; left: 24px; max-width: 300px; }
 }
 
 /* ── UI Stability Fixes ── */

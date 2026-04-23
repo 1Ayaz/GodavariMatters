@@ -22,8 +22,6 @@ export default function TopBar() {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <img src="https://upload.wikimedia.org/wikipedia/en/2/2f/Rajahmundry_Municipal_Corporation_Logo.png" alt="RMC Logo" style={{ height: 32, marginRight: 8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} 
-          onError={(e) => { e.target.style.display = 'none' }} />
         <span className="brand">Godavar<span className="brand-accent">!</span>Matters</span>
         <span className="version">v1.1</span>
       </div>
