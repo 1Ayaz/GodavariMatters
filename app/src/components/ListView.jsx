@@ -2,19 +2,8 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../lib/store'
 import { displayName } from '../lib/names'
 import TranslatedText from '../lib/TranslatedText'
+import { timeAgo } from '../lib/utils'
 
-function timeAgo(date) {
-  const now = Date.now()
-  const d = new Date(date).getTime()
-  const diff = Math.floor((now - d) / 1000)
-  if (diff < 60) return 'Just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  const days = Math.floor(diff / 86400)
-  if (days === 1) return 'Yesterday'
-  if (days < 7) return `${days}d ago`
-  return 'Today'
-}
 
 function WardRow({ area, reports, onReportClick }) {
   const [expanded, setExpanded] = useState(false)

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
 import { displayName } from '../lib/names'
+import { useDragDismiss } from '../lib/useDragDismiss'
+import { POLITICIAN_PHOTOS } from '../lib/utils'
 
 // ── Constants ──
 const RMC_HELPLINE = '9494060060'
@@ -12,41 +14,18 @@ const MEEKOSAM_URL = 'https://meekosam.ap.gov.in'
 const RURAL_HELPLINE = '1902'
 const RMC_LOGO = 'https://upload.wikimedia.org/wikipedia/en/2/2f/Rajahmundry_Municipal_Corporation_Logo.png'
 
-// Politician photos
-const POLITICIAN_PHOTOS = {
-  'Adireddy Srinivas': 'https://meeadireddy.com/wp-content/uploads/2024/06/adireddy-vasu-profile.jpg',
-  'Gorantla Butchaiah Chowdary': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Gorantla_Butchaiah_Chowdary_MLA.jpg/220px-Gorantla_Butchaiah_Chowdary_MLA.jpg',
-  'Daggubati Purandheshwari': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Daggubati_Purandeswari.jpg/220px-Daggubati_Purandeswari.jpg',
-}
 
 // ── Contact Sheet (modal) ──
 function ContactSheet({ person, onClose }) {
   const { state } = useApp()
   const lang = state.lang || 'en'
-  const sheetRef = useRef(null)
-  const startY = useRef(0)
-  
-  if (!person) return null
+  const { ref: sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useDragDismiss(onClose, 60)
 
-  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY }
-  const handleTouchMove = (e) => {
-    const diff = e.touches[0].clientY - startY.current
-    if (diff > 0 && sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${diff}px)`
-    }
-  }
-  const handleTouchEnd = (e) => {
-    const diff = e.changedTouches[0].clientY - startY.current
-    if (diff > 60) {
-      onClose()
-    } else if (sheetRef.current) {
-      sheetRef.current.style.transform = 'translateY(0)'
-    }
-  }
+  if (!person) return null
 
   return (
     <div className="overlay" style={{ zIndex: 9999 }} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bottom-sheet small-sheet" ref={sheetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ padding: 0, transition: 'transform 0.2s ease-out' }}>
+      <div className="bottom-sheet small-sheet" ref={sheetRef} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ padding: 0, transition: 'transform 0.2s ease-out' }}>
         <div className="wcp-drag-handle" style={{ margin: '12px auto' }} />
         <div className="sheet-header" style={{ paddingTop: 0 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

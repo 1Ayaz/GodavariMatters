@@ -3,9 +3,6 @@ import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
 import { detectJurisdiction } from '../lib/jurisdiction'
 
-function isMobileDevice() {
-  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
 
 const WASTE_TYPE_KEYS = [
   { key: 'wt_street', value: 'Street Garbage' },
@@ -112,10 +109,7 @@ export default function ReportSheet() {
 
   if (!state.showReportForm) return null
 
-  // SECURITY: Only allow reporting from mobile devices with cameras
-  if (!isMobileDevice()) {
-    return null
-  }
+  if (!state.isMobile) return null
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.showReportForm(false)}>

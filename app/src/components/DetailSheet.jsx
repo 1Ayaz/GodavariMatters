@@ -1,4 +1,5 @@
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
+import { useDragDismiss } from '../lib/useDragDismiss'
 import { useApp } from '../lib/store'
 import { detectJurisdiction, generateWhatsAppPayload, generateShareText } from '../lib/jurisdiction'
 import BlameTree from './BlameTree'
@@ -11,16 +12,15 @@ export default function DetailSheet() {
   const lang = state.lang || 'en'
   const report = state.selectedReport
   const selectedWard = state.selectedWard
-  const sheetRef = useRef(null)
-  const startY = useRef(0)
+  const dismiss = () => { actions.selectReport(null); actions.selectWard(null) }
+  const { ref: sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useDragDismiss(dismiss)
 
   const jurisdiction = useMemo(() => {
     if (report) return detectJurisdiction(report.lat, report.lng)
-    if (selectedWard) return selectedWard 
+    if (selectedWard) return selectedWard
     return null
   }, [report, selectedWard])
 
-  // IMPORTANT: All hooks MUST be called before any early return (React Rules of Hooks)
   const translatedLandmark = useTranslate(report?.landmark || '')
   const translatedWasteType = useTranslate(report?.waste_type || '')
 
@@ -31,9 +31,7 @@ export default function DetailSheet() {
   const isUrban = jurisdiction?.type === 'urban'
   const complaintLabel = isUrban ? t('file_complaint', lang) : t('meekosam', lang)
 
-  const handleSeen = async () => {
-    await actions.incrementSeen(report.id)
-  }
+  const handleSeen = () => actions.incrementSeen(report.id)
 
   const handleComplaint = () => {
     if (!jurisdiction) return
@@ -41,26 +39,9 @@ export default function DetailSheet() {
     window.open(payload.url, '_blank')
   }
 
-  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY }
-  const handleTouchMove = (e) => {
-    const diff = e.touches[0].clientY - startY.current
-    if (diff > 0 && sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${diff}px)`
-    }
-  }
-  const handleTouchEnd = (e) => {
-    const diff = e.changedTouches[0].clientY - startY.current
-    if (diff > 80) {
-      actions.selectReport(null)
-      actions.selectWard(null)
-    } else if (sheetRef.current) {
-      sheetRef.current.style.transform = 'translateY(0)'
-    }
-  }
-
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && (actions.selectReport(null) || actions.selectWard(null))}>
-      <div className="bottom-sheet detail-sheet" ref={sheetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transition: 'transform 0.2s ease-out' }}>
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && dismiss()}>
+      <div className="bottom-sheet detail-sheet" ref={sheetRef} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ transition: 'transform 0.2s ease-out' }}>
         <div className="wcp-drag-handle" style={{ margin: '0 auto 12px' }} />
         <div className="sheet-header" style={{ paddingTop: 0 }}>
           <div>

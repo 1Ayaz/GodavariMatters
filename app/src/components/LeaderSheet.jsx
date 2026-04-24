@@ -2,13 +2,14 @@ import { useMemo } from 'react'
 import { useApp } from '../lib/store'
 import { displayName } from '../lib/names'
 import TranslatedText from '../lib/TranslatedText'
+import { POLITICIAN_PHOTOS } from '../lib/utils'
 
 /**
  * NammaKasa-style Politician Report Card
  * Shows: Photo, name, party, stats, worst wards with complaint counts, recent reports
  */
 export default function LeaderSheet() {
-  const { state, actions, filteredReports } = useApp()
+  const { state, actions } = useApp()
   const leader = state.selectedLeader
 
   // Compute stats for this leader's constituency
@@ -65,17 +66,7 @@ export default function LeaderSheet() {
     }
   }
 
-  // Photo URLs for known politicians
-  const photoMap = {
-    'Adireddy Srinivas': 'https://meeadireddy.com/wp-content/uploads/2024/06/adireddy-vasu-profile.jpg',
-    'Daggubati Purandheshwari': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Daggubati_Purandeswari.jpg/220px-Daggubati_Purandeswari.jpg',
-    'Gorantla Butchaiah Chowdary': 'https://myneta.info/andhra_pradesh2024/candidate_photos/37.jpg',
-  }
-  const photoUrl = photoMap[leader.name] || ''
-
-  const severityColors = {
-    minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
-  }
+  const photoUrl = POLITICIAN_PHOTOS[leader.name] || ''
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.selectLeader(null)}>
