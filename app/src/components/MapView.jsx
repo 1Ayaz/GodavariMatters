@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
@@ -18,22 +18,25 @@ L.Icon.Default.mergeOptions({
 const RJY_CENTER = [17.005, 81.780]
 const RJY_ZOOM = 13
 
+// NammaKasa-style: restrict bounds to Rajahmundry area so user can't zoom out to see the whole world
+const RJY_BOUNDS = L.latLngBounds(
+  [16.88, 81.62],  // SW corner
+  [17.12, 81.92]   // NE corner
+)
+
+// Zoom threshold: above this zoom = show individual dots, below = show bubbles
+const ZOOM_THRESHOLD = 15
+
 const SEVERITY_COLORS = {
   minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
 }
 
-// ── Map Controls ──
+// ── Map Controls (bottom-right, NammaKasa style) ──
 function MapControls() {
   const map = useMap()
   const { actions } = useApp()
   return (
     <div className="map-controls">
-      <button className="map-ctrl-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-      <button className="map-ctrl-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
       <button className="map-ctrl-btn gps-btn" aria-label="My location" onClick={() => {
         if (!navigator.geolocation) return alert('GPS not available')
         navigator.geolocation.getCurrentPosition(
@@ -47,8 +50,22 @@ function MapControls() {
       }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
       </button>
+      <button className="map-ctrl-btn" onClick={() => map.zoomIn()} aria-label="Zoom in">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button className="map-ctrl-btn" onClick={() => map.zoomOut()} aria-label="Zoom out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
     </div>
   )
+}
+
+// ── Track zoom level ──
+function ZoomTracker({ onZoomChange }) {
+  useMapEvents({
+    zoomend: (e) => onZoomChange(e.target.getZoom()),
+  })
+  return null
 }
 
 // ── Get centroid of a GeoJSON polygon ──
@@ -74,9 +91,9 @@ function timeAgo(date) {
   return `${days}d ago`
 }
 
-// ── Ward count bubbles — clickable! ──
-function WardBubbles({ boundaries, reportsByArea, onBubbleClick }) {
-  if (!boundaries) return null
+// ── Ward count bubbles — only visible at lower zoom levels ──
+function WardBubbles({ boundaries, reportsByArea, onBubbleClick, visible }) {
+  if (!boundaries || !visible) return null
 
   return boundaries.features.map((feature) => {
     const name = feature.properties.name || 'Unknown'
@@ -89,17 +106,13 @@ function WardBubbles({ boundaries, reportsByArea, onBubbleClick }) {
     const center = feature.properties.lat && feature.properties.lng 
       ? [feature.properties.lat, feature.properties.lng]
       : getCentroid(feature)
-    // Aggressive scaling for visual impact
-    const baseSize = 24
-    let size = baseSize
-    if (count > 0) size = Math.min(80, baseSize + (count * 6))
+    // NammaKasa-style: dark red circles scaled by count
+    const baseSize = 28
+    let size = Math.min(80, baseSize + (count * 5))
     
-    const isHot = count >= 5
-    const isCritical = count >= 10
-
     const icon = L.divIcon({
       className: '',
-      html: `<div class="ward-bubble has-reports ${isHot ? 'hot' : ''} ${isCritical ? 'critical' : ''}" style="width:${size}px;height:${size}px;font-size:${size > 40 ? 18 : 13}px">
+      html: `<div class="ward-bubble has-reports" style="width:${size}px;height:${size}px;font-size:${size > 50 ? 18 : 14}px">
         ${count}
       </div>`,
       iconSize: [size, size],
@@ -118,9 +131,36 @@ function WardBubbles({ boundaries, reportsByArea, onBubbleClick }) {
               name,
               matchName,
               count,
+              center,
               isUrban: feature.properties.type === 'urban_sachivalayam',
               code: feature.properties.code,
             })
+          }
+        }}
+      />
+    )
+  })
+}
+
+// ── Report dot markers — only visible at higher zoom levels ──
+function ReportMarkers({ onReportPreview, visible }) {
+  const { filteredReports, actions } = useApp()
+  if (!visible) return null
+  
+  return filteredReports.map(report => {
+    const isResolved = report.status === 'resolved'
+    const isPending = report.cleaned_image_url && !isResolved
+    const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
+    return (
+      <CircleMarker
+        key={report.id}
+        center={[report.lat, report.lng]}
+        radius={7}
+        pathOptions={{ color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.95 }}
+        eventHandlers={{
+          click: (e) => {
+            L.DomEvent.stopPropagation(e)
+            onReportPreview?.(report)
           }
         }}
       />
@@ -138,8 +178,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
 
-  // Choropleth style — both urban and rural use same red accent
-  // Internal borders are nearly invisible; only heatmap fill shows
+  // Style for urban areas
   const getUrbanStyle = useCallback((feature) => {
     let name = normalizeKey(feature.properties.name || '')
     if (name.includes('SESHAYYAMETTA')) name = 'SESHAYYAMETTA'
@@ -160,21 +199,32 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     }
   }, [reportsByArea])
 
-  const hoverUrbanStyle = {
-    color: '#E8390E',
-    weight: 1.5,
-    opacity: 0.8,
-    fillColor: '#E8390E',
-    fillOpacity: 0.15,
-  }
+  const onEachUrban = useCallback((feature, layer) => {
+    const name = feature.properties.name || 'Unknown'
+    const matchName = normalizeKey(name)
+    const stats = reportsByArea?.[matchName]
+    const count = stats?.total || 0
 
-  const selectedUrbanStyle = {
-    color: '#E8390E',
-    weight: 1.5,
-    opacity: 0.9,
-    fillColor: '#E8390E',
-    fillOpacity: 0.2,
-  }
+    layer.on({
+      mouseover: (e) => {
+        if (hoveredRef.current && hoveredRef.current !== e.target) {
+          hoveredRef.current.setStyle({ weight: 0.5, color: 'rgba(0,0,0,0.06)' })
+        }
+        e.target.setStyle({ weight: 2, color: '#E8390E' })
+        hoveredRef.current = e.target
+        onHover?.({ name, count, isUrban: true, rawName: name })
+      },
+      mouseout: (e) => {
+        e.target.setStyle({ weight: 0.5, color: 'rgba(0,0,0,0.06)' })
+        hoveredRef.current = null
+        onHover?.(null)
+      },
+      click: (e) => {
+        L.DomEvent.stopPropagation(e)
+        onSelect?.({ name, count, isUrban: true, rawName: name })
+      }
+    })
+  }, [reportsByArea, onHover, onSelect])
 
   // Rural uses same style as urban
   const getRuralStyle = useCallback((feature) => {
@@ -196,61 +246,6 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
     }
   }, [reportsByArea])
 
-  const hoverRuralStyle = {
-    color: '#E8390E',
-    weight: 1.5,
-    opacity: 0.8,
-    fillColor: '#E8390E',
-    fillOpacity: 0.15,
-  }
-
-  const selectedRuralStyle = {
-    color: '#E8390E',
-    weight: 1.5,
-    opacity: 0.9,
-    fillColor: '#E8390E',
-    fillOpacity: 0.2,
-  }
-
-  const onEachUrban = useCallback((feature, layer) => {
-    const name = feature.properties.name || 'Unknown'
-    const matchName = normalizeKey(name)
-    const stats = reportsByArea?.[matchName]
-    const count = stats?.total || 0
-
-    layer.on({
-      mouseover: (e) => {
-        const l = e.target
-        if (hoveredRef.current && hoveredRef.current !== l) {
-          hoveredRef.current.setStyle(getUrbanStyle(hoveredRef.current.feature))
-        }
-        l.setStyle(hoverUrbanStyle)
-        l.bringToFront()
-        hoveredRef.current = l
-        onHover?.({ ...feature.properties, name: displayName(name), rawName: name, isUrban: true, count, code: feature.properties.code })
-      },
-      mouseout: (e) => {
-        e.target.setStyle(getUrbanStyle(feature))
-        hoveredRef.current = null
-        onHover?.(null)
-      },
-      click: (e) => {
-        L.DomEvent.stopPropagation(e)
-        const l = e.target
-        l.setStyle(selectedUrbanStyle)
-        onSelect?.({
-          name: displayName(name), 
-          rawName: name,
-          isUrban: true, 
-          count, 
-          code: feature.properties.code,
-          address: feature.properties.address || 'Rajamahendravaram Municipal Corporation'
-        })
-        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
-      },
-    })
-  }, [reportsByArea, onHover, onSelect, getUrbanStyle, map])
-
   const onEachRural = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
     const matchName = normalizeKey(name)
@@ -259,84 +254,58 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
 
     layer.on({
       mouseover: (e) => {
-        const l = e.target
-        if (hoveredRef.current && hoveredRef.current !== l) {
-          const isUrb = hoveredRef.current.feature.properties.type === 'urban_sachivalayam'
-          hoveredRef.current.setStyle(isUrb ? getUrbanStyle(hoveredRef.current.feature) : getRuralStyle(hoveredRef.current.feature))
+        if (hoveredRef.current && hoveredRef.current !== e.target) {
+          hoveredRef.current.setStyle({ weight: 0.5, color: 'rgba(0,0,0,0.06)' })
         }
-        l.setStyle(hoverRuralStyle)
-        l.bringToFront()
-        hoveredRef.current = l
-        onHover?.({ ...feature.properties, name: displayName(name), rawName: name, isUrban: false, count, code: feature.properties.code })
+        e.target.setStyle({ weight: 2, color: '#E8390E' })
+        hoveredRef.current = e.target
+        onHover?.({ name, count, isUrban: false, rawName: name })
       },
       mouseout: (e) => {
-        e.target.setStyle(getRuralStyle(feature))
+        e.target.setStyle({ weight: 0.5, color: 'rgba(0,0,0,0.06)' })
         hoveredRef.current = null
         onHover?.(null)
       },
       click: (e) => {
         L.DomEvent.stopPropagation(e)
-        const l = e.target
-        l.setStyle(selectedRuralStyle)
-        onSelect?.({
-          name: displayName(name), 
-          rawName: name,
-          isUrban: false, 
-          count, 
-          code: feature.properties.code,
-          address: feature.properties.address || 'Rural Rajamahendravaram'
-        })
-        map.flyToBounds(e.target.getBounds(), { padding: [50, 50], duration: 1 })
-      },
-    })
-  }, [reportsByArea, onHover, onSelect, getRuralStyle, getUrbanStyle, map])
-
-  const { rural, urban } = useMemo(() => {
-    if (!geojson) return { rural: null, urban: null }
-    return {
-      rural: { ...geojson, features: geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam') },
-      urban: { ...geojson, features: geojson.features.filter(f => f.properties.type === 'urban_sachivalayam') }
-    }
-  }, [geojson])
-
-  // Build inverted mask: gray out everything OUTSIDE the city boundary
-  const maskGeoJSON = useMemo(() => {
-    if (!cityLimits) return null
-    // Get city boundary coordinates
-    const cityCoords = cityLimits.geometry?.coordinates?.[0]
-      || cityLimits.features?.[0]?.geometry?.coordinates?.[0]
-    if (!cityCoords) return null
-
-    // World rectangle (outer ring) — must be counter-clockwise for GeoJSON hole
-    const worldRing = [
-      [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
-    ]
-    // City boundary is the hole (inner ring) — already clockwise from GeoJSON
-    return {
-      type: 'Feature',
-      geometry: {
-        type: 'Polygon',
-        coordinates: [worldRing, cityCoords]
+        onSelect?.({ name, count, isUrban: false, rawName: name })
       }
-    }
-  }, [cityLimits])
+    })
+  }, [reportsByArea, onHover, onSelect])
 
-  // Style for the outside mask — warm muted overlay
-  const maskStyle = {
-    color: 'transparent',
-    weight: 0,
-    fillColor: '#e8e4e0',
-    fillOpacity: 0.6,
-    interactive: false
+  if (!geojson) return null
+
+  const urban = geojson.features.filter(f => f.properties.type === 'urban_sachivalayam')
+  const rural = geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam')
+
+  // Outside-city mask
+  let maskGeoJSON = null
+  if (cityLimits) {
+    try {
+      const world = { type: 'Polygon', coordinates: [[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]] }
+      const cityCoords = cityLimits.type === 'FeatureCollection'
+        ? cityLimits.features[0].geometry.coordinates
+        : cityLimits.geometry
+          ? cityLimits.geometry.coordinates
+          : cityLimits.coordinates
+      maskGeoJSON = {
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [world.coordinates[0], ...(Array.isArray(cityCoords[0][0][0]) ? cityCoords.flat() : cityCoords)] }
+      }
+    } catch(e) {}
   }
 
-  // Style for the city boundary line — barely visible whisper
+  const maskStyle = {
+    fillColor: '#f8f8fa',
+    fillOpacity: 0.85,
+    color: 'transparent',
+    weight: 0,
+    interactive: false
+  }
   const boundaryLineStyle = {
-    color: '#d4574a',
+    color: 'rgba(232,57,14,0.2)',
     weight: 1.5,
-    opacity: 0.3,
-    dashArray: '8, 6',
-    fillColor: 'transparent',
+    dashArray: '6 4',
     fillOpacity: 0,
     interactive: false
   }
@@ -355,31 +324,7 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
   )
 }
 
-// ── Report dot markers with mini preview ──
-function ReportMarkers({ onReportPreview }) {
-  const { filteredReports, actions } = useApp()
-  return filteredReports.map(report => {
-    const isResolved = report.status === 'resolved'
-    const isPending = report.cleaned_image_url && !isResolved
-    const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
-    return (
-      <CircleMarker
-        key={report.id}
-        center={[report.lat, report.lng]}
-        radius={6}
-        pathOptions={{ color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.9 }}
-        eventHandlers={{
-          click: (e) => {
-            L.DomEvent.stopPropagation(e)
-            onReportPreview?.(report)
-          }
-        }}
-      />
-    )
-  })
-}
-
-// ── Ward Complaints Sliding Panel (new!) ──
+// ── Ward Complaints Sliding Panel ──
 function WardComplaintsPanel({ wardName, rawName, reports, onClose, onReportClick }) {
   const lang = 'en'
   const panelRef = useRef(null)
@@ -403,58 +348,43 @@ function WardComplaintsPanel({ wardName, rawName, reports, onClose, onReportClic
     if (diff > 80) onClose()
   }
 
+  const active = wardReports.filter(r => r.status !== 'resolved')
+  const resolved = wardReports.filter(r => r.status === 'resolved')
+
   return (
     <div className="ward-complaints-backdrop" onClick={onClose}>
-      <div 
-        className="ward-complaints-panel" 
-        ref={panelRef}
-        onClick={(e) => e.stopPropagation()}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Drag handle */}
-        <div className="wcp-drag-handle" onClick={onClose} />
-        
-        {/* Header */}
+      <div className="ward-complaints-panel" onClick={(e) => e.stopPropagation()} ref={panelRef}
+        onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className="wcp-drag-handle" />
         <div className="wcp-header">
           <div className="wcp-header-left">
-            <h3 className="wcp-title">{displayName(rawName || wardName)}</h3>
-            <span className="wcp-subtitle">{wardReports.length} {wardReports.length === 1 ? 'complaint' : 'complaints'}</span>
+            <div className="wcp-title">{displayName(wardName)}</div>
+            <div className="wcp-subtitle">{active.length} active · {resolved.length} resolved</div>
           </div>
           <button className="wcp-close" onClick={onClose}>✕</button>
         </div>
-
-        {/* Reports List */}
         <div className="wcp-list">
           {wardReports.length === 0 ? (
-            <div className="wcp-empty">
-              <span style={{ fontSize: 32, marginBottom: 8 }}>📍</span>
-              <p>No complaints in this area yet.</p>
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>✓</div>
+              <div style={{ fontWeight: 700 }}>No reports in this area</div>
             </div>
           ) : (
             wardReports.map(r => {
               const isResolved = r.status === 'resolved'
               return (
                 <div key={r.id} className="wcp-item" onClick={() => onReportClick(r)}>
-                  <img src={r.image_url} alt="" className="wcp-item-img" onError={(e) => { e.target.style.display = 'none' }} />
-                  <div className="wcp-item-info">
-                    <div className="wcp-item-type">{r.waste_type || 'Report'}</div>
-                    <div className="wcp-item-landmark">{r.landmark || 'No landmark'}</div>
-                    <div className="wcp-item-meta">
-                      <span className={`wcp-severity ${r.severity}`}>{r.severity}</span>
+                  <div className={`wcp-dot ${r.severity}`} />
+                  <img src={r.image_url} alt="" className="wcp-thumb"
+                    onError={(e) => { e.target.style.display = 'none' }} />
+                  <div className="wcp-info">
+                    <div className="wcp-landmark">{r.landmark || displayName(r.assigned_area)}</div>
+                    <div className="wcp-meta-row">
+                      <span className={`wcp-severity ${r.severity}`}>{isResolved ? 'Resolved' : r.severity}</span>
                       <span className="wcp-time">{timeAgo(r.created_at)}</span>
                     </div>
                   </div>
-                  <div className="wcp-item-seen">
-                    {isResolved ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    ) : (
-                      <>
-                        <span className="wcp-seen-num">{r.seen_count || 0}</span>
-                        <span className="wcp-seen-label">seen</span>
-                      </>
-                    )}
-                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#ccc', flexShrink: 0 }}>→</div>
                 </div>
               )
             })
@@ -496,8 +426,10 @@ export default function MapView() {
   const [cityLimits, setCityLimits] = useState(null)
   const [hoveredArea, setHoveredArea] = useState(null)
   const [selectedWard, setSelectedWard] = useState(null)
-  const [complaintsPanel, setComplaintsPanel] = useState(null) // { name, rawName }
-  const [previewReport, setPreviewReport] = useState(null) // mini preview
+  const [complaintsPanel, setComplaintsPanel] = useState(null)
+  const [previewReport, setPreviewReport] = useState(null)
+  const [currentZoom, setCurrentZoom] = useState(RJY_ZOOM)
+  const mapRef = useRef(null)
 
   useEffect(() => {
     loadData().then(({ boundaries }) => setBoundaries(boundaries))
@@ -524,37 +456,44 @@ export default function MapView() {
   const totalReports = state.reports.length
   const lang = state.lang || 'en'
 
+  // Zoom-based visibility
+  const showBubbles = currentZoom < ZOOM_THRESHOLD
+  const showDots = currentZoom >= ZOOM_THRESHOLD
+
   if (state.activeView !== 'map') return null
 
   const infoData = selectedWard || hoveredArea
 
   const handleWardSelect = (ward) => {
     setSelectedWard(ward)
-    setPreviewReport(null) // close any preview
+    setPreviewReport(null)
   }
 
   const handleBubbleClick = (data) => {
-    // Open the complaints sliding panel directly
-    setComplaintsPanel({ name: data.name, rawName: data.name })
+    // Zoom into the ward, then show complaints panel
+    if (mapRef.current) {
+      mapRef.current.flyTo(data.center, ZOOM_THRESHOLD + 1, { duration: 0.8 })
+    }
+    // Open complaints panel after a short delay for the zoom animation
+    setTimeout(() => {
+      setComplaintsPanel({ name: data.name, rawName: data.name })
+    }, 400)
     setSelectedWard(null)
     setPreviewReport(null)
   }
 
   const handleReportPreview = (report) => {
     if (state.isMobile) {
-      // On mobile: show mini preview card at bottom
       setPreviewReport(report)
       setSelectedWard(null)
       setComplaintsPanel(null)
     } else {
-      // On desktop: open full detail
       actions.selectReport(report)
     }
   }
 
   const handleViewReports = () => {
     if (selectedWard) {
-      // Open complaints panel inline instead of switching to list view
       setComplaintsPanel({ name: selectedWard.name, rawName: selectedWard.rawName || selectedWard.name })
       setSelectedWard(null)
     }
@@ -567,10 +506,19 @@ export default function MapView() {
 
   return (
     <div className="view-panel map-panel active">
-      <MapContainer center={RJY_CENTER} zoom={RJY_ZOOM} minZoom={11} maxZoom={19}
-        className="map-container" zoomControl={false} attributionControl={false}
+      <MapContainer 
+        center={RJY_CENTER} 
+        zoom={RJY_ZOOM} 
+        minZoom={12} 
+        maxZoom={19}
+        maxBounds={RJY_BOUNDS}
+        maxBoundsViscosity={0.9}
+        className="map-container" 
+        zoomControl={false} 
+        attributionControl={false}
         preferCanvas={true}
         whenReady={(e) => {
+          mapRef.current = e.target
           e.target.on('click', handleMapClick)
         }}>
         <TileLayer 
@@ -579,6 +527,7 @@ export default function MapView() {
           updateWhenZooming={false}
           updateWhenIdle={true}
         />
+        <ZoomTracker onZoomChange={setCurrentZoom} />
         <InteractiveBoundaryLayer
           onHover={setHoveredArea}
           onSelect={handleWardSelect}
@@ -589,12 +538,13 @@ export default function MapView() {
           boundaries={boundaries} 
           reportsByArea={reportsByArea} 
           onBubbleClick={handleBubbleClick}
+          visible={showBubbles}
         />
-        <ReportMarkers onReportPreview={handleReportPreview} />
+        <ReportMarkers onReportPreview={handleReportPreview} visible={showDots} />
         <MapControls />
       </MapContainer>
 
-      {/* Inline stats badges — repositioned to avoid topbar overlap */}
+      {/* Inline stats badges */}
       <div className="map-stats-badges">
         <div className="map-badge badge-active">
           <span className="badge-num">{totalActive}</span>
@@ -606,7 +556,7 @@ export default function MapView() {
         </div>
       </div>
 
-      {/* Ward info panel — hover or click */}
+      {/* Ward info panel — bottom-left, NammaKasa Kadumalleshwara style */}
       {infoData && (
         <div className={`map-info-panel mip-light${selectedWard ? ' mip-selected' : ''}`}>
           <div className="mip-indicator" />

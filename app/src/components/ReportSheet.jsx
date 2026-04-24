@@ -32,39 +32,53 @@ export default function ReportSheet() {
   const [severity, setSeverity] = useState('moderate')
   const [wasteType, setWasteType] = useState('Mixed Waste')
   const [location, setLocation] = useState(null)
-  const [locStatus, setLocStatus] = useState('acquiring')
+  const [locStatus, setLocStatus] = useState('acquiring') // 'acquiring' | 'success' | 'error' | 'denied'
   const [submitting, setSubmitting] = useState(false)
   const [isOutside, setIsOutside] = useState(false)
+  const [showAndroidHelp, setShowAndroidHelp] = useState(false)
   const fileRef = useRef()
+
+  const attemptGeolocation = () => {
+    setLocStatus('acquiring')
+    setIsOutside(false)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords
+          setLocation({ lat, lng })
+          const jur = detectJurisdiction(lat, lng)
+          if (jur) {
+            setLocStatus('success')
+            setIsOutside(false)
+          } else {
+            setLocStatus('error')
+            setIsOutside(true)
+          }
+        },
+        (err) => {
+          // err.code: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+          if (err.code === 1) {
+            setLocStatus('denied')
+          } else {
+            setLocStatus('error')
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    } else {
+      setLocStatus('error')
+    }
+  }
 
   // Get GPS on open
   useEffect(() => {
     if (state.showReportForm) {
-      setLocStatus('acquiring')
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude: lat, longitude: lng } = pos.coords
-            setLocation({ lat, lng })
-            const jur = detectJurisdiction(lat, lng)
-            if (jur) {
-              setLocStatus('success')
-              setIsOutside(false)
-            } else {
-              setLocStatus('error')
-              setIsOutside(true)
-            }
-          },
-          () => setLocStatus('error'),
-          { enableHighAccuracy: true, timeout: 10000 }
-        )
-      } else {
-        setLocStatus('error')
-      }
+      attemptGeolocation()
     } else {
       // Reset on close
       setPhoto(null); setPhotoPreview(null); setLandmark(''); setSeverity('moderate')
       setWasteType('Mixed Waste'); setLocation(null); setLocStatus('acquiring')
+      setShowAndroidHelp(false)
     }
   }, [state.showReportForm])
 
@@ -127,15 +141,49 @@ export default function ReportSheet() {
           </div>
 
           {/* LOCATION */}
-          <div className={`location-box ${locStatus === 'success' ? 'success' : isOutside ? 'error' : ''}`}>
-            <div className="loc-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={locStatus === 'success' ? '#16a34a' : '#E8390E'} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+          {locStatus === 'denied' ? (
+            <div className="location-denied-box">
+              <div className="loc-denied-header">
+                <div className="loc-denied-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+                </div>
+                <div className="loc-denied-text">
+                  <strong>Location access is off</strong>
+                  <span>GodavariMatters needs your GPS to verify you're at this spot. This keeps reports authentic.</span>
+                </div>
+              </div>
+              <button className="loc-try-again-btn" onClick={attemptGeolocation}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+                Try Again
+              </button>
+              <button className="loc-help-toggle" onClick={() => setShowAndroidHelp(!showAndroidHelp)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                How to enable on Android
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showAndroidHelp ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s ease' }}>
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              {showAndroidHelp && (
+                <div className="loc-android-steps">
+                  <div className="loc-step"><span className="loc-step-num">1</span> Tap the lock icon in the address bar</div>
+                  <div className="loc-step"><span className="loc-step-num">2</span> Tap Permissions</div>
+                  <div className="loc-step"><span className="loc-step-num">3</span> Find Location and set it to "Allow"</div>
+                  <div className="loc-step"><span className="loc-step-num">4</span> Reload the page and tap "Try Again"</div>
+                  <p className="loc-step-note">Can't find these settings? Try restarting your browser after changing them.</p>
+                </div>
+              )}
             </div>
-            <div className="loc-text">
-              <strong>{locStatus === 'success' ? t('location_captured', lang) : isOutside ? 'OUTSIDE BOUNDARY' : locStatus === 'error' ? t('location_failed', lang) : t('location_acquiring', lang)}</strong>
-              <span>{locStatus === 'success' ? t('location_sub_ok', lang) : isOutside ? 'Reporting only allowed in Rajahmundry.' : t('location_sub_wait', lang)}</span>
+          ) : (
+            <div className={`location-box ${locStatus === 'success' ? 'success' : isOutside ? 'error' : ''}`}>
+              <div className="loc-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={locStatus === 'success' ? '#16a34a' : '#E8390E'} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+              </div>
+              <div className="loc-text">
+                <strong>{locStatus === 'success' ? t('location_captured', lang) : isOutside ? 'OUTSIDE BOUNDARY' : locStatus === 'error' ? t('location_failed', lang) : t('location_acquiring', lang)}</strong>
+                <span>{locStatus === 'success' ? t('location_sub_ok', lang) : isOutside ? 'Reporting only allowed in Rajahmundry.' : t('location_sub_wait', lang)}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* LANDMARK */}
           <label className="field-label">{t('landmark_label', lang)} <span className="required">*</span></label>

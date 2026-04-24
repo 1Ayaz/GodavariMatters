@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import { useApp } from '../lib/store'
+import { displayName } from '../lib/names'
 
 /**
  * NammaKasa-style Politician Report Card
- * Shows: Photo, name, party, stats, worst wards, recent reports
+ * Shows: Photo, name, party, stats, worst wards with complaint counts, recent reports
  */
 export default function LeaderSheet() {
   const { state, actions, filteredReports } = useApp()
@@ -13,7 +14,7 @@ export default function LeaderSheet() {
   const stats = useMemo(() => {
     if (!leader) return null
     const allReports = state.reports
-    const active = allReports.filter(r => r.status === 'unresolved')
+    const active = allReports.filter(r => r.status !== 'resolved')
     const resolved = allReports.filter(r => r.status === 'resolved')
     
     // Group by area
@@ -22,17 +23,23 @@ export default function LeaderSheet() {
       const area = r.assigned_area || 'Unknown'
       if (!areaMap[area]) areaMap[area] = { total: 0, unresolved: 0 }
       areaMap[area].total++
-      if (r.status === 'unresolved') areaMap[area].unresolved++
+      if (r.status !== 'resolved') areaMap[area].unresolved++
     })
     
+    // Worst wards: sorted by complaint count, top 10
     const worstAreas = Object.entries(areaMap)
       .sort((a, b) => b[1].total - a[1].total)
-      .slice(0, 5)
+      .slice(0, 10)
       .map(([name, data]) => ({ name, ...data }))
 
     const avgDays = allReports.length > 0
       ? Math.round(allReports.reduce((acc, r) => acc + Math.max(1, Math.ceil((Date.now() - new Date(r.created_at).getTime()) / 86400000)), 0) / allReports.length)
       : 0
+
+    // Recent reports: latest reports (not resolved), sorted by creation date
+    const recentReports = [...allReports]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10)
 
     return {
       active: active.length,
@@ -41,7 +48,7 @@ export default function LeaderSheet() {
       avgDays,
       areas: Object.keys(areaMap).length,
       worstAreas,
-      recentReports: allReports.slice(0, 5)
+      recentReports
     }
   }, [leader, state.reports])
 
@@ -64,6 +71,10 @@ export default function LeaderSheet() {
     'Gorantla Butchaiah Chowdary': 'https://myneta.info/andhra_pradesh2024/candidate_photos/37.jpg',
   }
   const photoUrl = photoMap[leader.name] || ''
+
+  const severityColors = {
+    minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
+  }
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.selectLeader(null)}>
@@ -121,36 +132,47 @@ export default function LeaderSheet() {
             <strong>{stats.active} civic issues</strong> across {stats.areas} wards remain unresolved in {leader.name}'s {leader.type === 'MP' ? 'parliamentary' : 'assembly'} constituency.
           </div>
 
-          {/* Worst wards */}
+          {/* Worst wards — NammaKasa style with complaint count on right */}
           {stats.worstAreas.length > 0 && (
             <>
               <h3 className="section-title">WORST WARDS</h3>
-              {stats.worstAreas.map((area, i) => (
-                <div key={area.name} className="lb-item" style={{ cursor: 'default' }}>
-                  <span className={`lb-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
-                  <div className="lb-info">
-                    <div className="lb-name">{area.name}</div>
+              <div className="worst-wards-list">
+                {stats.worstAreas.map((area, i) => (
+                  <div key={area.name} className="worst-ward-item">
+                    <span className={`worst-ward-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
+                    <div className="worst-ward-info">
+                      <div className="worst-ward-name">{displayName(area.name)}</div>
+                    </div>
+                    <span className="worst-ward-count">{area.total}</span>
                   </div>
-                  <span className="lb-count">{area.total}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </>
           )}
 
-          {/* Recent reports */}
+          {/* Recent reports — NammaKasa style with thumbnail, severity badge, and time */}
           {stats.recentReports.length > 0 && (
             <>
               <h3 className="section-title" style={{ marginTop: 20 }}>RECENT REPORTS</h3>
-              {stats.recentReports.map(r => (
-                <div key={r.id} className="wr-item" onClick={() => { actions.selectLeader(null); actions.selectReport(r); }}>
-                  {r.image_url && <img src={r.image_url} width="48" height="48" alt="" />}
-                  <div className="wr-info">
-                    <div className="wr-landmark">{r.assigned_area}</div>
-                    <div className="wr-time">{r.landmark} · {Math.max(1, Math.ceil((Date.now() - new Date(r.created_at).getTime()) / 86400000)) === 1 ? 'Today' : `${Math.max(1, Math.ceil((Date.now() - new Date(r.created_at).getTime()) / 86400000))}d ago`}</div>
-                  </div>
-                  <span className={`wr-severity ${r.severity}`}>{r.severity}</span>
-                </div>
-              ))}
+              <div className="recent-reports-list">
+                {stats.recentReports.map(r => {
+                  const daysAgo = Math.max(1, Math.ceil((Date.now() - new Date(r.created_at).getTime()) / 86400000))
+                  const timeLabel = daysAgo === 1 ? 'Today' : `${daysAgo}d ago`
+                  return (
+                    <div key={r.id} className="recent-report-item" onClick={() => { actions.selectLeader(null); actions.selectReport(r); }}>
+                      {r.image_url && (
+                        <img src={r.image_url} className="recent-report-thumb" alt=""
+                          onError={(e) => { e.target.style.display = 'none' }} />
+                      )}
+                      <div className="recent-report-info">
+                        <div className="recent-report-area">{displayName(r.assigned_area)}</div>
+                        <div className="recent-report-meta">{r.landmark} · {timeLabel}</div>
+                      </div>
+                      <span className={`wcp-severity ${r.severity}`} style={{ flexShrink: 0 }}>{r.severity}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </>
           )}
         </div>
