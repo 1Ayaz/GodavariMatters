@@ -111,7 +111,7 @@ function AdminLogin({ onLogin }) {
       }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: -1.5 }}>
-            Godavar<span style={{ color: '#E8390E', fontStyle: 'italic' }}>!</span>Matters
+            Godavar<span style={{ color: '#E8390E' }}>!</span>Matters
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 6, fontWeight: 500 }}>
             Admin Dashboard
@@ -197,10 +197,23 @@ function AdminReportCard({ report, onApprove, onReject, onDelete }) {
       opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s'
     }}>
       {/* Report image */}
-      <div style={{ position: 'relative', height: 160, background: '#f3f4f6' }}>
+      <div style={{ position: 'relative', height: 160, background: '#f3f4f6', display: 'flex' }}>
         {report.image_url && (
-          <img src={report.image_url} alt="Report" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <div style={{ flex: 1, position: 'relative' }}>
+            <img src={report.image_url} alt="Report" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            {report.cleaned_image_url && (
+              <span style={{ position: 'absolute', bottom: 6, left: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>BEFORE</span>
+            )}
+          </div>
         )}
+        {/* Cleaned image full half view */}
+        {report.cleaned_image_url && (
+          <div style={{ flex: 1, position: 'relative', borderLeft: '2px solid #fff' }}>
+            <img src={report.cleaned_image_url} alt="Cleaned" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <span style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(22, 163, 74, 0.9)', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>AFTER</span>
+          </div>
+        )}
+        
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
           <span style={{ background: color, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 20, textTransform: 'uppercase' }}>
             {report.severity}
@@ -212,12 +225,6 @@ function AdminReportCard({ report, onApprove, onReject, onDelete }) {
             {isResolved ? 'RESOLVED' : isPendingReview ? 'REVIEW PENDING' : 'OPEN'}
           </span>
         </div>
-        {/* Cleaned image preview */}
-        {report.cleaned_image_url && (
-          <div style={{ position: 'absolute', bottom: 10, right: 10, width: 60, height: 60, borderRadius: 8, border: '2px solid #fff', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-            <img src={report.cleaned_image_url} alt="Cleaned" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-        )}
       </div>
 
       <div style={{ padding: '14px 16px' }}>
@@ -328,7 +335,7 @@ export default function AdminPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.5 }}>
-            Godavar<span style={{ color: '#E8390E', fontStyle: 'italic' }}>!</span>Matters
+            Godavar<span style={{ color: '#E8390E' }}>!</span>Matters
           </span>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#E8390E', background: '#fef2f0', padding: '2px 8px', borderRadius: 20 }}>
             ADMIN
