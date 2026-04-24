@@ -171,10 +171,11 @@ export function AppProvider({ children }) {
       }
 
       const isDuplicate = stateRef.current.reports.some(r => {
+        if (r.status === 'resolved') return false
         const dist = Math.sqrt(Math.pow(r.lat - reportData.lat, 2) + Math.pow(r.lng - reportData.lng, 2))
         return dist < 0.00015
       })
-      if (isDuplicate) throw new Error("A similar report already exists at this location. Please 'Seen' that report instead.")
+      if (isDuplicate) throw new Error("An active report already exists at this location. Please 'Seen' that report instead.")
 
       const saved = await apiSubmit(report)
       dispatch({ type: 'ADD_REPORT', report: saved })
