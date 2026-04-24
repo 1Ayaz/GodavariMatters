@@ -926,15 +926,16 @@ input { font-family: var(--font); }
   }
   .view-toggle { padding: 3px; border-radius: 10px; }
 
-  /* Floating pill info panel on mobile — above bottom bar */
+  /* Floating info panel on mobile — bottom-left, NammaKasa style */
   .map-info-panel {
     top: auto;
     bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 24px);
-    max-width: 400px;
-    min-width: unset;
+    left: 12px;
+    right: auto;
+    transform: none;
+    width: auto;
+    max-width: calc(100vw - 80px);
+    min-width: 180px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(24px);
@@ -1019,7 +1020,7 @@ input { font-family: var(--font); }
   /* Stats panel stays full-width — like NammaKasa */
   .stats-panel { padding: 0 40px 100px; }
   .bottom-bar { max-width: 480px; left: 50%; transform: translateX(-50%); }
-  .map-info-panel { bottom: 84px; left: 24px; max-width: 300px; }
+  .map-info-panel { bottom: 100px; left: 24px; right: auto; max-width: 320px; }
 }
 
 /* ── UI Stability Fixes ── */

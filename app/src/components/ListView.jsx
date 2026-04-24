@@ -2,40 +2,6 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../lib/store'
 import { displayName } from '../lib/names'
 
-function WardRow({ area, reports, onReportClick }) {
-  const [expanded, setExpanded] = useState(false)
-  const unresolved = reports.filter(r => r.status !== 'resolved').length
-
-  return (
-    <>
-      <div className={`ward-row${expanded ? ' expanded' : ''}`} onClick={() => setExpanded(!expanded)}>
-        <div className="ward-count-badge">{reports.length}</div>
-        <div className="ward-info">
-          <div className="ward-name">{displayName(area.name)}</div>
-          <div className="ward-detail">{unresolved} unresolved · {area.type === 'urban' ? 'Sachivalayam' : 'Village'}</div>
-        </div>
-        <div className="ward-expand">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      {expanded && (
-        <div className="ward-reports">
-          {reports.map(r => (
-            <div key={r.id} className="wr-item" onClick={() => onReportClick(r)}>
-              <div className="wr-count">1</div>
-              <div className="wr-info">
-                <div className="wr-landmark">{r.landmark || 'No landmark'}</div>
-                <div className="wr-time">{timeAgo(r.created_at)}</div>
-              </div>
-              <span className={`wr-severity ${r.severity}`}>{r.severity}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </>
-  )
-}
-
 function timeAgo(date) {
   const now = Date.now()
   const d = new Date(date).getTime()
@@ -45,7 +11,62 @@ function timeAgo(date) {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   const days = Math.floor(diff / 86400)
   if (days === 1) return 'Yesterday'
-  return `${days}d ago`
+  if (days < 7) return `${days}d ago`
+  return 'Today'
+}
+
+function WardRow({ area, reports, onReportClick }) {
+  const [expanded, setExpanded] = useState(false)
+  const unresolved = reports.filter(r => r.status !== 'resolved').length
+
+  // Sort reports by most recent first
+  const sortedReports = useMemo(() => {
+    return [...reports].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [reports])
+
+  // Get the highest severity for badge color
+  const severityOrder = { critical: 4, severe: 3, moderate: 2, minor: 1 }
+  const maxSeverity = reports.reduce((max, r) => {
+    return (severityOrder[r.severity] || 0) > (severityOrder[max] || 0) ? r.severity : max
+  }, 'minor')
+
+  return (
+    <>
+      <div className={`ward-row${expanded ? ' expanded' : ''}`} onClick={() => setExpanded(!expanded)}>
+        <div className="ward-count-badge">{reports.length}</div>
+        <div className="ward-info">
+          <div className="ward-name">{displayName(area.name)}</div>
+          <div className="ward-detail">{unresolved} unresolved · {area.type === 'urban' ? 'Sachivalayam' : 'Village'}</div>
+        </div>
+        <svg 
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className="ward-chevron"
+          style={{ 
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0)', 
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            color: '#9ca3af',
+            flexShrink: 0
+          }}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      {expanded && (
+        <div className="ward-reports" style={{ animation: 'slideDown 0.3s ease' }}>
+          {sortedReports.map(r => (
+            <div key={r.id} className="wr-item" onClick={() => onReportClick(r)}>
+              <div className={`wcp-dot ${r.severity}`} />
+              <div className="wr-info">
+                <div className="wr-landmark">{r.landmark || 'No landmark'}</div>
+                <div className="wr-time">{timeAgo(r.created_at)}</div>
+              </div>
+              <span className={`wcp-severity ${r.severity}`}>{r.severity}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
 }
 
 export default function ListView() {
