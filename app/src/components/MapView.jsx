@@ -241,6 +241,9 @@ function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimi
     })
   }, [reportsByArea, onHover, onWardZoom])
 
+  const onEachUrban = useMemo(() => makeOnEachFeature(true), [makeOnEachFeature])
+  const onEachRural = useMemo(() => makeOnEachFeature(false), [makeOnEachFeature])
+
   if (!geojson) return null
 
   const urban = geojson.features.filter(f => f.properties.type === 'urban_sachivalayam')
@@ -286,8 +289,8 @@ function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimi
       {maskGeoJSON && <GeoJSON key="city_mask" data={maskGeoJSON} style={() => maskStyle} />}
       {/* Subtle boundary line on city edge */}
       {cityLimits && <GeoJSON key="city_border" data={cityLimits} style={() => boundaryLineStyle} />}
-      <GeoJSON key="rural" data={rural} style={getBoundaryStyle} onEachFeature={makeOnEachFeature(false)} />
-      <GeoJSON key="urban" data={urban} style={getBoundaryStyle} onEachFeature={makeOnEachFeature(true)} />
+      <GeoJSON key="rural" data={rural} style={getBoundaryStyle} onEachFeature={onEachRural} />
+      <GeoJSON key="urban" data={urban} style={getBoundaryStyle} onEachFeature={onEachUrban} />
     </>
   )
 }

@@ -1,6 +1,7 @@
-import { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
+import { createContext, useContext, useReducer, useMemo, useRef, useEffect } from 'react'
 import { supabase, getReports, submitReport as apiSubmit, incrementSeen as apiSeen, markResolved as apiResolve, uploadImage } from './supabase'
 import { loadData, detectJurisdiction } from './jurisdiction'
+import { MOCK_REPORTS } from './mockData'
 
 const AppContext = createContext()
 
@@ -74,6 +75,8 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
+  const stateRef = useRef(state)
+  stateRef.current = state
 
   // Load data on mount
   useEffect(() => {
@@ -92,127 +95,7 @@ export function AppProvider({ children }) {
         dispatch({ type: 'SET_DATA', boundaries, governance, sachivalayamOfficials })
         let reports = await getReports()
         
-        // Seed mock data if no reports exist — enables testing
-        if (reports.length === 0) {
-          console.info('GodavariMatters: No reports found. Seeding mock data for testing...')
-          const mockReports = [
-            {
-              id: 'mock-001',
-              lat: 17.0052, lng: 81.7780,
-              landmark: 'Near Innespeta Bus Stand',
-              severity: 'severe',
-              waste_type: 'Street Garbage',
-              image_url: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=400&h=300&fit=crop',
-              assigned_area: 'Prakasam Nagar - 01',
-              area_type: 'urban',
-              area_code: 'PN01',
-              status: 'unresolved',
-              seen_count: 12,
-              created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-002',
-              lat: 17.0025, lng: 81.7820,
-              landmark: 'Opposite RR Hospital, Danavaipeta',
-              severity: 'critical',
-              waste_type: 'Medical Waste',
-              image_url: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=400&h=300&fit=crop',
-              assigned_area: 'Danavaipeta - 02',
-              area_type: 'urban',
-              area_code: 'DV02',
-              status: 'unresolved',
-              seen_count: 28,
-              created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-003',
-              lat: 17.0090, lng: 81.7740,
-              landmark: 'Kambalacheruvu Main Road',
-              severity: 'moderate',
-              waste_type: 'Mixed Waste',
-              image_url: 'https://images.unsplash.com/photo-1567789884554-0b844b597180?w=400&h=300&fit=crop',
-              assigned_area: 'Seshayyametta - 03',
-              area_type: 'urban',
-              area_code: 'SM03',
-              status: 'unresolved',
-              seen_count: 5,
-              created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-004',
-              lat: 17.0015, lng: 81.7700,
-              landmark: 'TTD Kalyanamandapam junction',
-              severity: 'minor',
-              waste_type: 'Construction Debris',
-              image_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop',
-              assigned_area: 'Prakasam Nagar - 01',
-              area_type: 'urban',
-              area_code: 'PN01',
-              status: 'resolved',
-              seen_count: 3,
-              created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-              cleaned_image_url: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop',
-              resolved_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-005',
-              lat: 16.9980, lng: 81.7850,
-              landmark: 'Behind Pushkara Ghat, Godavari bank',
-              severity: 'critical',
-              waste_type: 'River / Ghat',
-              image_url: 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=400&h=300&fit=crop',
-              assigned_area: 'Danavaipeta - 02',
-              area_type: 'urban',
-              area_code: 'DV02',
-              status: 'unresolved',
-              seen_count: 45,
-              created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-006',
-              lat: 17.0110, lng: 81.7690,
-              landmark: 'Rajahmundry Railway Station (Platform 1)',
-              severity: 'severe',
-              waste_type: 'Street Garbage',
-              image_url: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=300&fit=crop',
-              assigned_area: 'Seshayyametta - 03',
-              area_type: 'urban',
-              area_code: 'SM03',
-              status: 'unresolved',
-              seen_count: 18,
-              created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-007',
-              lat: 17.0070, lng: 81.7810,
-              landmark: 'Arthamuru Road, near Ambedkar Statue',
-              severity: 'moderate',
-              waste_type: 'Clogged Drain',
-              image_url: 'https://images.unsplash.com/photo-1590496793929-36417d3117de?w=400&h=300&fit=crop',
-              assigned_area: 'Prakasam Nagar - 01',
-              area_type: 'urban',
-              area_code: 'PN01',
-              status: 'unresolved',
-              seen_count: 7,
-              created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
-            },
-            {
-              id: 'mock-008',
-              lat: 17.0140, lng: 81.7750,
-              landmark: 'Morampudi Ring Road, empty lot',
-              severity: 'minor',
-              waste_type: 'Construction Debris',
-              image_url: 'https://images.unsplash.com/photo-1571727153934-b9e0059b7ab2?w=400&h=300&fit=crop',
-              assigned_area: 'Morampudi - 04',
-              area_type: 'urban',
-              area_code: 'MP04',
-              status: 'unresolved',
-              seen_count: 2,
-              created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
-            },
-          ]
-          reports = mockReports
-        }
+        if (reports.length === 0) reports = MOCK_REPORTS
         
         dispatch({ type: 'SET_REPORTS', reports })
       } catch (e) {
@@ -252,7 +135,7 @@ export function AppProvider({ children }) {
     }
   }, [])
 
-  const actions = {
+  const actions = useMemo(() => ({
     setView: (view) => dispatch({ type: 'SET_VIEW', view }),
     setSeverityFilter: (value) => dispatch({ type: 'SET_FILTER_SEVERITY', value }),
     setStatusFilter: (value) => dispatch({ type: 'SET_FILTER_STATUS', value }),
@@ -270,17 +153,12 @@ export function AppProvider({ children }) {
     dismissSplash: () => dispatch({ type: 'DISMISS_SPLASH' }),
 
     submitReport: async (reportData, imageFile) => {
-      // This will throw if rate limited, duplicate GPS, invalid file, etc.
       const { url } = await uploadImage(imageFile)
       const jurisdiction = detectJurisdiction(reportData.lat, reportData.lng)
+      if (!jurisdiction) throw new Error('This location is outside our operational boundary. Please report issues only within Rajamahendravaram (Urban & Rural).')
 
-      if (!jurisdiction) {
-        throw new Error('This location is outside our operational boundary. Please report issues only within Rajamahendravaram (Urban & Rural).')
-      }
-      
       const report = {
-        lat: reportData.lat,
-        lng: reportData.lng,
+        lat: reportData.lat, lng: reportData.lng,
         landmark: reportData.landmark,
         severity: reportData.severity,
         waste_type: reportData.waste_type,
@@ -292,10 +170,9 @@ export function AppProvider({ children }) {
         seen_count: 0,
       }
 
-      // Prevent duplicates by checking proximity (within ~15 meters)
-      const isDuplicate = state.reports.some(r => {
+      const isDuplicate = stateRef.current.reports.some(r => {
         const dist = Math.sqrt(Math.pow(r.lat - reportData.lat, 2) + Math.pow(r.lng - reportData.lng, 2))
-        return dist < 0.00015 // roughly 15-20 meters
+        return dist < 0.00015
       })
       if (isDuplicate) throw new Error("A similar report already exists at this location. Please 'Seen' that report instead.")
 
@@ -310,7 +187,7 @@ export function AppProvider({ children }) {
         const updated = await apiSeen(reportId)
         if (updated) dispatch({ type: 'UPDATE_REPORT', report: updated })
       } catch (e) {
-        console.error('Failed to increment seen count:', e)
+        console.error('Failed to increment seen:', e)
       }
     },
 
@@ -321,7 +198,7 @@ export function AppProvider({ children }) {
       dispatch({ type: 'SHOW_CLEANED_FORM', show: false })
       dispatch({ type: 'SELECT_REPORT', report: updated })
     },
-  }
+  }), [dispatch])
 
   // Filtered reports
   const filteredReports = state.reports.filter(r => {

@@ -15,7 +15,17 @@ export default function LeaderSheet() {
   // Compute stats for this leader's constituency
   const stats = useMemo(() => {
     if (!leader) return null
-    const allReports = state.reports
+    
+    // Filter reports based on leader's constituency
+    const allReports = state.reports.filter(r => {
+      if (leader.type === 'MLA') {
+        if (leader.constituency.includes('City')) return r.area_type === 'urban'
+        if (leader.constituency.includes('Rural')) return r.area_type === 'rural'
+      }
+      // MP or unknown type gets all reports
+      return true
+    })
+    
     const active = allReports.filter(r => r.status !== 'resolved')
     const resolved = allReports.filter(r => r.status === 'resolved')
     
