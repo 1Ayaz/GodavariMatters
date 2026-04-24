@@ -146,9 +146,26 @@ function ReportMarkers({ onReportPreview, visible }) {
       spiderfyOnMaxZoom={true}
       iconCreateFunction={(cluster) => {
         const count = cluster.getChildCount()
+        const markers = cluster.getAllChildMarkers()
+        
+        // A marker is resolved if its HTML contains the green background color #16a34a
+        const activeCount = markers.filter(m => !m.options.icon.options.html.includes('#16a34a')).length
+        
         const size = Math.min(60, 32 + (count * 2))
+        
+        if (activeCount === 0) {
+          // All reports are resolved: Green Bubble with total resolved count
+          return L.divIcon({
+            html: `<div class="ward-bubble" style="background:#16a34a;box-shadow:0 3px 12px rgba(22,163,74,0.4);border:2.5px solid rgba(255,255,255,0.5);width:${size}px;height:${size}px;font-size:${size > 40 ? 16 : 13}px">${count}</div>`,
+            className: '',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          })
+        }
+        
+        // Has active reports: Red Bubble with active issues count
         return L.divIcon({
-          html: `<div class="ward-bubble has-reports" style="width:${size}px;height:${size}px;font-size:${size > 40 ? 16 : 13}px">${count}</div>`,
+          html: `<div class="ward-bubble has-reports" style="width:${size}px;height:${size}px;font-size:${size > 40 ? 16 : 13}px">${activeCount}</div>`,
           className: '',
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2]
