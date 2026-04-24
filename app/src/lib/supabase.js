@@ -87,38 +87,38 @@ export async function uploadImage(file) {
   // Validate the compressed result
   validateCompressedFile(compressed)
   
-  // Primary: Supabase Storage
-  if (supabase) {
-    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
-    const { data, error } = await supabase.storage
-      .from('pollution_snaps')
-      .upload(fileName, compressed, { contentType: 'image/jpeg', upsert: false })
-    
-    if (error) {
-      console.error('Supabase storage upload failed:', error)
-      throw new Error(`Image upload failed: ${error.message}. Please check your internet connection and try again.`)
+  // Primary: Cloudinary Unsigned Upload
+  try {
+    const formData = new FormData()
+    formData.append('file', compressed, 'upload.jpg')
+    formData.append('upload_preset', 'Godavari_Matters')
+
+    const response = await fetch('https://api.cloudinary.com/v1_1/dmvxad50g/image/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Cloudinary upload failed:', errorData)
+      throw new Error('Failed to upload image to Cloudinary.')
     }
+
+    const data = await response.json()
+    return { url: data.secure_url, isLocal: false }
+  } catch (error) {
+    console.error('Upload Error:', error)
     
-    const { data: urlData } = supabase.storage
-      .from('pollution_snaps')
-      .getPublicUrl(fileName)
-    
-    if (!urlData?.publicUrl) {
-      throw new Error('Failed to generate public URL for uploaded image. The storage bucket may not have public access enabled.')
-    }
-    
-    return { url: urlData.publicUrl, isLocal: false }
+    // Fallback: base64 (if upload entirely fails)
+    console.warn('GodavariMatters: Cloudinary upload failed. Falling back to local base64.')
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(compressed)
+    })
+    return { url: base64, isLocal: true }
   }
-  
-  // Fallback: base64 (DEMO MODE ONLY — warns user)
-  console.warn('GodavariMatters: No Supabase configured. Images stored locally — NOT visible on other devices!')
-  const base64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onloadend = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(compressed)
-  })
-  return { url: base64, isLocal: true }
 }
 
 /**
