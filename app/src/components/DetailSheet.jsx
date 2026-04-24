@@ -4,6 +4,7 @@ import { detectJurisdiction, generateWhatsAppPayload, generateShareText } from '
 import BlameTree from './BlameTree'
 import { t } from '../lib/i18n'
 import { displayName, normalizeKey } from '../lib/names'
+import { useTranslate } from '../lib/useTranslate'
 
 export default function DetailSheet() {
   const { state, actions } = useApp()
@@ -23,6 +24,10 @@ export default function DetailSheet() {
   const daysAgo = report ? Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000)) : 0
   const isUrban = jurisdiction?.type === 'urban'
   const complaintLabel = isUrban ? t('file_complaint', lang) : t('meekosam', lang)
+
+  // Translate dynamic content when in Telugu
+  const translatedLandmark = useTranslate(report?.landmark || '')
+  const translatedWasteType = useTranslate(report?.waste_type || '')
 
   const handleSeen = async () => {
     await actions.incrementSeen(report.id)
@@ -65,7 +70,7 @@ export default function DetailSheet() {
             <h2>{displayName(report?.assigned_area || selectedWard?.name || 'Unknown Area')}</h2>
             <p className="detail-landmark">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-              {report ? report.landmark : (selectedWard?.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang))}
+              {report ? translatedLandmark : (selectedWard?.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang))}
             </p>
           </div>
           <div className="detail-actions">
@@ -114,7 +119,7 @@ export default function DetailSheet() {
                 </div>
                 <div className="dstat">
                   <span className="dstat-num monospace">
-                    {report.waste_type}
+                    {translatedWasteType}
                   </span>
                   <span className="dstat-label">{t('waste_type', lang)}</span>
                 </div>

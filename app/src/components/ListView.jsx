@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../lib/store'
 import { displayName } from '../lib/names'
+import TranslatedText from '../lib/TranslatedText'
 
 function timeAgo(date) {
   const now = Date.now()
@@ -57,7 +58,7 @@ function WardRow({ area, reports, onReportClick }) {
             <div key={r.id} className="wr-item" onClick={() => onReportClick(r)}>
               <div className={`wcp-dot ${r.severity}`} />
               <div className="wr-info">
-                <div className="wr-landmark">{r.landmark || 'No landmark'}</div>
+              <TranslatedText text={r.landmark || 'No landmark'} className="wr-landmark" />
                 <div className="wr-time">{timeAgo(r.created_at)}</div>
               </div>
               <span className={`wcp-severity ${r.severity}`}>{r.severity}</span>

@@ -5,6 +5,7 @@ import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
 import { t } from '../lib/i18n'
 import { displayName, normalizeKey } from '../lib/names'
+import TranslatedText from '../lib/TranslatedText'
 
 // Fix Leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl
@@ -378,7 +379,7 @@ function WardComplaintsPanel({ wardName, rawName, reports, onClose, onReportClic
                   <img src={r.image_url} alt="" className="wcp-thumb"
                     onError={(e) => { e.target.style.display = 'none' }} />
                   <div className="wcp-info">
-                    <div className="wcp-landmark">{r.landmark || displayName(r.assigned_area)}</div>
+                    <TranslatedText text={r.landmark || displayName(r.assigned_area)} className="wcp-landmark" />
                     <div className="wcp-meta-row">
                       <span className={`wcp-severity ${r.severity}`}>{isResolved ? 'Resolved' : r.severity}</span>
                       <span className="wcp-time">{timeAgo(r.created_at)}</span>

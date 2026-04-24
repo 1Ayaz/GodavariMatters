@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useApp } from '../lib/store'
 import { displayName } from '../lib/names'
+import TranslatedText from '../lib/TranslatedText'
 
 /**
  * NammaKasa-style Politician Report Card
@@ -166,7 +167,7 @@ export default function LeaderSheet() {
                       )}
                       <div className="recent-report-info">
                         <div className="recent-report-area">{displayName(r.assigned_area)}</div>
-                        <div className="recent-report-meta">{r.landmark} · {timeLabel}</div>
+                        <div className="recent-report-meta"><TranslatedText text={r.landmark} as="span" /> · {timeLabel}</div>
                       </div>
                       <span className={`wcp-severity ${r.severity}`} style={{ flexShrink: 0 }}>{r.severity}</span>
                     </div>
