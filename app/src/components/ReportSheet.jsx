@@ -174,14 +174,22 @@ export default function ReportSheet() {
               )}
             </div>
           ) : (
-            <div className={`location-box ${locStatus === 'success' ? 'success' : isOutside ? 'error' : ''}`}>
-              <div className="loc-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={locStatus === 'success' ? '#16a34a' : '#E8390E'} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-              </div>
-              <div className="loc-text">
-                <strong>{locStatus === 'success' ? t('location_captured', lang) : isOutside ? 'OUTSIDE BOUNDARY' : locStatus === 'error' ? t('location_failed', lang) : t('location_acquiring', lang)}</strong>
-                <span>{locStatus === 'success' ? t('location_sub_ok', lang) : isOutside ? 'Reporting only allowed in Rajahmundry.' : t('location_sub_wait', lang)}</span>
-              </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16,
+              padding: '6px 12px', borderRadius: 20, width: 'fit-content',
+              background: locStatus === 'success' ? '#f0fdf4' : isOutside ? '#fef2f2' : '#f8fafc',
+              border: `1px solid ${locStatus === 'success' ? '#bbf7d0' : isOutside ? '#fecaca' : '#e2e8f0'}`,
+              color: locStatus === 'success' ? '#16a34a' : isOutside ? '#ef4444' : '#64748b',
+              fontSize: 12, fontWeight: 700
+            }}>
+              {locStatus === 'success' ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              ) : locStatus === 'acquiring' ? (
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'currentColor', animation: 'pulse 1.5s infinite' }} />
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+              )}
+              {locStatus === 'success' ? 'GPS Locked' : isOutside ? 'Outside Rajamahendravaram Limits' : locStatus === 'error' ? t('location_failed', lang) : 'Acquiring GPS...'}
             </div>
           )}
 

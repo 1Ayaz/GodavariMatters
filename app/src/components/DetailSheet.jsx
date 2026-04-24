@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useApp } from '../lib/store'
 import { detectJurisdiction, generateWhatsAppPayload, generateShareText } from '../lib/jurisdiction'
 import BlameTree from './BlameTree'
@@ -11,6 +11,8 @@ export default function DetailSheet() {
   const lang = state.lang || 'en'
   const report = state.selectedReport
   const selectedWard = state.selectedWard
+  const sheetRef = useRef(null)
+  const startY = useRef(0)
 
   const jurisdiction = useMemo(() => {
     if (report) return detectJurisdiction(report.lat, report.lng)
@@ -18,16 +20,16 @@ export default function DetailSheet() {
     return null
   }, [report, selectedWard])
 
+  // IMPORTANT: All hooks MUST be called before any early return (React Rules of Hooks)
+  const translatedLandmark = useTranslate(report?.landmark || '')
+  const translatedWasteType = useTranslate(report?.waste_type || '')
+
   if (!report && !selectedWard) return null
 
   const isResolved = report?.status === 'resolved'
   const daysAgo = report ? Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000)) : 0
   const isUrban = jurisdiction?.type === 'urban'
   const complaintLabel = isUrban ? t('file_complaint', lang) : t('meekosam', lang)
-
-  // Translate dynamic content when in Telugu
-  const translatedLandmark = useTranslate(report?.landmark || '')
-  const translatedWasteType = useTranslate(report?.waste_type || '')
 
   const handleSeen = async () => {
     await actions.incrementSeen(report.id)
@@ -39,21 +41,28 @@ export default function DetailSheet() {
     window.open(payload.url, '_blank')
   }
 
-  const handleShare = () => {
-    if (!jurisdiction) return
-    const text = generateShareText(report, jurisdiction)
-    if (navigator.share) {
-      navigator.share({ title: 'GodavariMatters Report', text })
-    } else {
-      navigator.clipboard.writeText(text)
-      alert('Copied to clipboard!')
+  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY }
+  const handleTouchMove = (e) => {
+    const diff = e.touches[0].clientY - startY.current
+    if (diff > 0 && sheetRef.current) {
+      sheetRef.current.style.transform = `translateY(${diff}px)`
+    }
+  }
+  const handleTouchEnd = (e) => {
+    const diff = e.changedTouches[0].clientY - startY.current
+    if (diff > 80) {
+      actions.selectReport(null)
+      actions.selectWard(null)
+    } else if (sheetRef.current) {
+      sheetRef.current.style.transform = 'translateY(0)'
     }
   }
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && (actions.selectReport(null) || actions.selectWard(null))}>
-      <div className="bottom-sheet detail-sheet">
-        <div className="sheet-header">
+      <div className="bottom-sheet detail-sheet" ref={sheetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ transition: 'transform 0.2s ease-out' }}>
+        <div className="wcp-drag-handle" style={{ margin: '0 auto 12px' }} />
+        <div className="sheet-header" style={{ paddingTop: 0 }}>
           <div>
             <div className="detail-badges">
               {report ? (
@@ -74,9 +83,6 @@ export default function DetailSheet() {
             </p>
           </div>
           <div className="detail-actions">
-            <button className="icon-btn" onClick={handleShare} title="Share">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            </button>
             <button className="close-btn" onClick={() => { actions.selectReport(null); actions.selectWard(null); }}>&times;</button>
           </div>
         </div>
@@ -169,20 +175,7 @@ export default function DetailSheet() {
                 </button>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {/* Viral Share */}
-                <button 
-                  className="action-btn" 
-                  onClick={handleShare}
-                  style={{ 
-                    background: '#f1f5f9', color: 'var(--text-primary)', border: 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: 13
-                  }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                  Share Story
-                </button>
-
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
                 {/* Resolve Action */}
                 {!isResolved && (
                   <button 

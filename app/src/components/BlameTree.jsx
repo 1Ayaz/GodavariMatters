@@ -21,14 +21,34 @@ const POLITICIAN_PHOTOS = {
 
 // ── Contact Sheet (modal) ──
 function ContactSheet({ person, onClose }) {
-  if (!person) return null
   const { state } = useApp()
   const lang = state.lang || 'en'
+  const sheetRef = useRef(null)
+  const startY = useRef(0)
+  
+  if (!person) return null
+
+  const handleTouchStart = (e) => { startY.current = e.touches[0].clientY }
+  const handleTouchMove = (e) => {
+    const diff = e.touches[0].clientY - startY.current
+    if (diff > 0 && sheetRef.current) {
+      sheetRef.current.style.transform = `translateY(${diff}px)`
+    }
+  }
+  const handleTouchEnd = (e) => {
+    const diff = e.changedTouches[0].clientY - startY.current
+    if (diff > 60) {
+      onClose()
+    } else if (sheetRef.current) {
+      sheetRef.current.style.transform = 'translateY(0)'
+    }
+  }
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bottom-sheet small-sheet" style={{ padding: 0 }}>
-        <div className="sheet-header">
+    <div className="overlay" style={{ zIndex: 9999 }} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bottom-sheet small-sheet" ref={sheetRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ padding: 0, transition: 'transform 0.2s ease-out' }}>
+        <div className="wcp-drag-handle" style={{ margin: '12px auto' }} />
+        <div className="sheet-header" style={{ paddingTop: 0 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             {person.showRmcLogo && (
               <img src={RMC_LOGO} alt="RMC" style={{ width: 44, height: 44, objectFit: 'contain' }}
@@ -142,16 +162,13 @@ function ContactSheet({ person, onClose }) {
 // ── Tree node ──
 function TreeNode({ initials, colorClass, title, name, subtitle, tag, onClick }) {
   return (
-    <button onClick={onClick} className="bt-node"
-      onMouseOver={(e) => e.currentTarget.style.background = '#fef2f0'}
-      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-      title={`Tap to contact ${title}`}>
+    <button onClick={onClick} className="bt-node" title={`Tap to contact ${title}`}>
       <div className={`bt-avatar ${colorClass}`}><span>{initials}</span></div>
-      <div style={{ lineHeight: 1.3, textAlign: 'center' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{name || title}</div>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{name ? title : subtitle}</div>
-        {tag && <div style={{ fontSize: 9, marginTop: 2, padding: '1px 6px', borderRadius: 4, background: tag === 'DIRECTLY RESPONSIBLE' ? '#fee2e2' : '#f0fdf4', color: tag === 'DIRECTLY RESPONSIBLE' ? '#dc2626' : '#16a34a', fontWeight: 800, display: 'inline-block' }}>{tag}</div>}
+      <div style={{ lineHeight: 1.3, textAlign: 'left', flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || title}</div>
+        <div style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name ? title : subtitle}</div>
       </div>
+      {tag && <div style={{ fontSize: 9, padding: '3px 6px', borderRadius: 6, background: tag === 'DIRECTLY RESPONSIBLE' ? '#fee2e2' : '#f0fdf4', color: tag === 'DIRECTLY RESPONSIBLE' ? '#dc2626' : '#16a34a', fontWeight: 800, flexShrink: 0, marginLeft: 6 }}>{tag === 'DIRECTLY RESPONSIBLE' ? 'RESPONSIBLE' : tag}</div>}
     </button>
   )
 }

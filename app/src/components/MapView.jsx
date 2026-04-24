@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Marker, useMap, useMapEvents } from 'react-leaflet'
+import MarkerClusterGroup from 'react-leaflet-cluster'
 import L from 'leaflet'
 import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
@@ -143,34 +144,60 @@ function WardBubbles({ boundaries, reportsByArea, onBubbleClick, visible }) {
   })
 }
 
-// ── Report dot markers — only visible at higher zoom levels ──
+// ── Report dot markers — clustered ──
 function ReportMarkers({ onReportPreview, visible }) {
-  const { filteredReports, actions } = useApp()
+  const { filteredReports } = useApp()
   if (!visible) return null
   
-  return filteredReports.map(report => {
-    const isResolved = report.status === 'resolved'
-    const isPending = report.cleaned_image_url && !isResolved
-    const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
-    return (
-      <CircleMarker
-        key={report.id}
-        center={[report.lat, report.lng]}
-        radius={7}
-        pathOptions={{ color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.95 }}
-        eventHandlers={{
-          click: (e) => {
-            L.DomEvent.stopPropagation(e)
-            onReportPreview?.(report)
-          }
-        }}
-      />
-    )
-  })
+  return (
+    <MarkerClusterGroup
+      chunkedLoading
+      maxClusterRadius={45}
+      showCoverageOnHover={false}
+      spiderfyOnMaxZoom={true}
+      iconCreateFunction={(cluster) => {
+        const count = cluster.getChildCount()
+        const size = Math.min(60, 32 + (count * 2))
+        return L.divIcon({
+          html: `<div class="ward-bubble has-reports" style="width:${size}px;height:${size}px;font-size:${size > 40 ? 16 : 13}px">${count}</div>`,
+          className: '',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
+        })
+      }}
+    >
+      {filteredReports.map(report => {
+        const isResolved = report.status === 'resolved'
+        const isPending = report.cleaned_image_url && !isResolved
+        const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
+        
+        const dotIcon = L.divIcon({
+          className: '',
+          html: `<div style="width:16px;height:16px;background:${color};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.2)"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        })
+
+        return (
+          <Marker
+            key={report.id}
+            position={[report.lat, report.lng]}
+            icon={dotIcon}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e)
+                onReportPreview?.(report)
+              }
+            }}
+          />
+        )
+      })}
+    </MarkerClusterGroup>
+  )
 }
 
 // ── Interactive boundary layer with hover/click ──
-function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits }) {
+function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimits }) {
   const [geojson, setGeojson] = useState(null)
   const hoveredRef = useRef(null)
   const map = useMap()
@@ -222,10 +249,12 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
       },
       click: (e) => {
         L.DomEvent.stopPropagation(e)
-        onSelect?.({ name, count, isUrban: true, rawName: name })
+        // Auto-zoom to ward bounds on click
+        const bounds = e.target.getBounds()
+        onWardZoom?.({ name, count, isUrban: true, rawName: name, bounds })
       }
     })
-  }, [reportsByArea, onHover, onSelect])
+  }, [reportsByArea, onHover, onWardZoom])
 
   // Rural uses same style as urban
   const getRuralStyle = useCallback((feature) => {
@@ -269,10 +298,12 @@ function InteractiveBoundaryLayer({ onHover, onSelect, reportsByArea, cityLimits
       },
       click: (e) => {
         L.DomEvent.stopPropagation(e)
-        onSelect?.({ name, count, isUrban: false, rawName: name })
+        // Auto-zoom to ward bounds on click
+        const bounds = e.target.getBounds()
+        onWardZoom?.({ name, count, isUrban: false, rawName: name, bounds })
       }
     })
-  }, [reportsByArea, onHover, onSelect])
+  }, [reportsByArea, onHover, onWardZoom])
 
   if (!geojson) return null
 
@@ -426,7 +457,6 @@ export default function MapView() {
   const [boundaries, setBoundaries] = useState(null)
   const [cityLimits, setCityLimits] = useState(null)
   const [hoveredArea, setHoveredArea] = useState(null)
-  const [selectedWard, setSelectedWard] = useState(null)
   const [complaintsPanel, setComplaintsPanel] = useState(null)
   const [previewReport, setPreviewReport] = useState(null)
   const [currentZoom, setCurrentZoom] = useState(RJY_ZOOM)
@@ -463,45 +493,36 @@ export default function MapView() {
 
   if (state.activeView !== 'map') return null
 
-  const infoData = selectedWard || hoveredArea
-
-  const handleWardSelect = (ward) => {
-    setSelectedWard(ward)
+  // Ward click → auto-zoom into the ward boundary (flyToBounds)
+  const handleWardZoom = (ward) => {
+    if (mapRef.current && ward.bounds) {
+      mapRef.current.flyToBounds(ward.bounds, {
+        padding: [40, 40],
+        maxZoom: ZOOM_THRESHOLD + 1,
+        duration: 0.8,
+      })
+    }
     setPreviewReport(null)
   }
 
   const handleBubbleClick = (data) => {
-    // Zoom into the ward, then show complaints panel
+    // Zoom into the ward directly
     if (mapRef.current) {
       mapRef.current.flyTo(data.center, ZOOM_THRESHOLD + 1, { duration: 0.8 })
     }
-    // Open complaints panel after a short delay for the zoom animation
-    setTimeout(() => {
-      setComplaintsPanel({ name: data.name, rawName: data.name })
-    }, 400)
-    setSelectedWard(null)
     setPreviewReport(null)
   }
 
   const handleReportPreview = (report) => {
     if (state.isMobile) {
       setPreviewReport(report)
-      setSelectedWard(null)
       setComplaintsPanel(null)
     } else {
       actions.selectReport(report)
     }
   }
 
-  const handleViewReports = () => {
-    if (selectedWard) {
-      setComplaintsPanel({ name: selectedWard.name, rawName: selectedWard.rawName || selectedWard.name })
-      setSelectedWard(null)
-    }
-  }
-
   const handleMapClick = () => {
-    if (selectedWard) setSelectedWard(null)
     if (previewReport) setPreviewReport(null)
   }
 
@@ -531,7 +552,7 @@ export default function MapView() {
         <ZoomTracker onZoomChange={setCurrentZoom} />
         <InteractiveBoundaryLayer
           onHover={setHoveredArea}
-          onSelect={handleWardSelect}
+          onWardZoom={handleWardZoom}
           reportsByArea={reportsByArea}
           cityLimits={cityLimits}
         />
@@ -557,33 +578,18 @@ export default function MapView() {
         </div>
       </div>
 
-      {/* Ward info panel — bottom-left, NammaKasa Kadumalleshwara style */}
-      {infoData && (
-        <div className={`map-info-panel mip-light${selectedWard ? ' mip-selected' : ''}`}>
+      {/* Ward hover info panel — bottom-right, NammaKasa style: name + type only */}
+      {hoveredArea && (
+        <div className="map-info-panel mip-light">
           <div className="mip-indicator" />
-          <div className="mip-content" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                <div className="mip-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName(infoData.name)}</div>
-                <div className="mip-meta">{infoData.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}</div>
-              </div>
-              <div className="mip-count" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: '1.1' }}>
-                <span className="mip-count-num" style={{ fontSize: '22px', fontWeight: '900', color: 'var(--accent)' }}>{infoData.count}</span>
-                <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.5px' }}>
-                  {infoData.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}
-                </span>
-              </div>
+          <div className="mip-content">
+            <div className="mip-name">{displayName(hoveredArea.name)}</div>
+            <div className="mip-meta">
+              {hoveredArea.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang)}
+              {hoveredArea.count > 0 && (
+                <span> · <strong style={{ color: 'var(--accent)' }}>{hoveredArea.count}</strong> {hoveredArea.count !== 1 ? t('reports_word', lang) : t('report_word', lang)}</span>
+              )}
             </div>
-            
-            {selectedWard && (
-              <div className="mip-actions" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                <button className="mip-btn" onClick={handleViewReports} style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px' }}>
-                  {t('view_reports', lang)}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                </button>
-                <button className="mip-dismiss" onClick={() => setSelectedWard(null)}>✕</button>
-              </div>
-            )}
           </div>
         </div>
       )}

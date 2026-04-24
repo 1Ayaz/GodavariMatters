@@ -10,7 +10,8 @@ export const supabase = supabaseUrl && supabaseAnonKey
 // ── SECURITY: Rate Limiter ──
 const RATE_LIMIT_WINDOW = 10 * 60 * 1000 // 10 minutes
 const RATE_LIMIT_MAX = 3 // max 3 reports per window
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB raw (camera photos can be huge — we compress before upload)
+const MAX_COMPRESSED_SIZE = 5 * 1024 * 1024 // 5MB after compression
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 
 function checkRateLimit() {
@@ -30,10 +31,15 @@ function checkRateLimit() {
 
 function validateFile(file) {
   if (!file) throw new Error('No image provided.')
-  if (file.size > MAX_FILE_SIZE) throw new Error('Image too large. Maximum size is 5MB.')
+  if (file.size > MAX_FILE_SIZE) throw new Error('Image too large. Please use a lower resolution camera setting.')
   if (!ALLOWED_TYPES.includes(file.type) && !file.name.match(/\.(jpe?g|png|webp|heic|heif)$/i)) {
     throw new Error('Invalid file type. Only images (JPG, PNG, WEBP) are allowed.')
   }
+}
+
+function validateCompressedFile(blob) {
+  if (!blob) throw new Error('Image compression failed.')
+  if (blob.size > MAX_COMPRESSED_SIZE) throw new Error('Image still too large after compression. Please try taking a photo from closer range.')
 }
 
 function sanitizeText(text) {
@@ -72,11 +78,14 @@ function checkDuplicateGPS(lat, lng) {
  * Images are compressed: 1200px max, 85% JPEG quality.
  */
 export async function uploadImage(file) {
-  // Security validations
+  // Validate file type and raw size first
   validateFile(file)
   
-  // Compress aggressively to save storage
+  // Compress first — camera photos can be 10-20MB raw but compress to <1MB
   const compressed = await compressImage(file)
+  
+  // Validate the compressed result
+  validateCompressedFile(compressed)
   
   // Primary: Supabase Storage
   if (supabase) {
