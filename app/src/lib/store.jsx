@@ -25,6 +25,7 @@ const initialState = {
   selectedReport: null,
   selectedWard: null,
   selectedLeader: null,
+  selectedOfficial: null,
   showReportForm: false,
   showCleanedForm: false,
   showStats: false,
@@ -54,6 +55,8 @@ function reducer(state, action) {
       return { ...state, selectedWard: action.ward, selectedReport: null }
     case 'SELECT_LEADER':
       return { ...state, selectedLeader: action.leader }
+    case 'SELECT_OFFICIAL':
+      return { ...state, selectedOfficial: action.official }
     case 'SHOW_REPORT_FORM':
       return { ...state, showReportForm: action.show }
     case 'SHOW_CLEANED_FORM':
@@ -146,6 +149,7 @@ export function AppProvider({ children }) {
     selectReport: (report) => dispatch({ type: 'SELECT_REPORT', report }),
     selectWard: (ward) => dispatch({ type: 'SELECT_WARD', ward }),
     selectLeader: (leader) => dispatch({ type: 'SELECT_LEADER', leader }),
+    selectOfficial: (official) => dispatch({ type: 'SELECT_OFFICIAL', official }),
     showReportForm: (show) => dispatch({ type: 'SHOW_REPORT_FORM', show }),
     showCleanedForm: (show) => dispatch({ type: 'SHOW_CLEANED_FORM', show }),
     toggleStats: () => dispatch({ type: 'TOGGLE_STATS' }),

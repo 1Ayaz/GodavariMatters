@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import BottomSheet from './BottomSheet'
 import { useApp } from '../lib/store'
 import { displayName } from '../lib/names'
 import TranslatedText from '../lib/TranslatedText'
@@ -79,8 +80,7 @@ export default function LeaderSheet() {
   const photoUrl = POLITICIAN_PHOTOS[leader.name] || ''
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.selectLeader(null)}>
-      <div className="bottom-sheet detail-sheet">
+    <BottomSheet isOpen={!!leader} onClose={() => actions.selectLeader(null)} className="detail-sheet">
         <div className="sheet-header">
           <div className="leader-header-info">
             <div className="leader-avatar-wrap">
@@ -179,6 +179,6 @@ export default function LeaderSheet() {
           )}
         </div>
       </div>
-    </div>
+    </BottomSheet>
   )
 }

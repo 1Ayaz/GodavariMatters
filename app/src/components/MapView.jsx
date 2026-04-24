@@ -296,29 +296,6 @@ function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimi
 }
 
 
-// ── Report Preview Card (mini card at bottom of map) ──
-function ReportPreviewCard({ report, onOpen, onClose }) {
-  if (!report) return null
-  const isResolved = report.status === 'resolved'
-  const color = isResolved ? '#16a34a' : (SEVERITY_COLORS[report.severity] || '#f97316')
-
-  return (
-    <div className="report-preview-card" onClick={onOpen}>
-      <div className="rpc-indicator" style={{ background: color }} />
-      <img src={report.image_url} alt="" className="rpc-img" onError={(e) => { e.target.style.display = 'none' }} />
-      <div className="rpc-info">
-        <div className="rpc-type">{report.waste_type || 'Report'}</div>
-        <div className="rpc-landmark">{report.landmark || displayName(report.assigned_area)}</div>
-        <div className="rpc-meta">
-          <span className={`wcp-severity ${report.severity}`}>{report.severity}</span>
-          <span className="wcp-time">{timeAgo(report.created_at)}</span>
-          {report.seen_count > 0 && <span className="wcp-time">👁 {report.seen_count}</span>}
-        </div>
-      </div>
-      <button className="rpc-close" onClick={(e) => { e.stopPropagation(); onClose() }}>✕</button>
-    </div>
-  )
-}
 
 // ── MAIN MAP VIEW ──
 export default function MapView() {
@@ -326,7 +303,6 @@ export default function MapView() {
   const [boundaries, setBoundaries] = useState(null)
   const [cityLimits, setCityLimits] = useState(null)
   const [hoveredArea, setHoveredArea] = useState(null)
-  const [previewReport, setPreviewReport] = useState(null)
   const [currentZoom, setCurrentZoom] = useState(RJY_ZOOM)
   const mapRef = useRef(null)
 
@@ -376,20 +352,14 @@ export default function MapView() {
     if (mapRef.current) {
       mapRef.current.flyTo(data.center, ZOOM_THRESHOLD + 1, { duration: 0.8 })
     }
-    setPreviewReport(null)
   }
 
   const handleReportPreview = (report) => {
-    if (state.isMobile) {
-      setPreviewReport(report)
-      setComplaintsPanel(null)
-    } else {
-      actions.selectReport(report)
-    }
+    actions.selectReport(report)
   }
 
   const handleMapClick = () => {
-    if (previewReport) setPreviewReport(null)
+    // Left empty since preview report is removed
   }
 
   return (
@@ -460,17 +430,6 @@ export default function MapView() {
         </div>
       )}
 
-      {/* Mini report preview card (mobile) */}
-      {previewReport && (
-        <ReportPreviewCard 
-          report={previewReport}
-          onOpen={() => {
-            actions.selectReport(previewReport)
-            setPreviewReport(null)
-          }}
-          onClose={() => setPreviewReport(null)}
-        />
-      )}
 
     </div>
   )

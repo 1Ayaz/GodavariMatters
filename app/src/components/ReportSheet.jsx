@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import BottomSheet from './BottomSheet'
 import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
 import { detectJurisdiction } from '../lib/jurisdiction'
@@ -112,8 +113,7 @@ export default function ReportSheet() {
   if (!state.isMobile) return null
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.showReportForm(false)}>
-      <div className="bottom-sheet">
+    <BottomSheet isOpen={state.showReportForm} onClose={() => actions.showReportForm(false)}>
         <div className="sheet-header">
           <h2>{t('report_garbage', lang)}</h2>
           <button className="close-btn" onClick={() => actions.showReportForm(false)}>&times;</button>
@@ -223,6 +223,6 @@ export default function ReportSheet() {
           <p className="anon-badge">{t('anonymous', lang)}</p>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   )
 }

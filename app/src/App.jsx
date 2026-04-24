@@ -9,6 +9,7 @@ import BottomBar from './components/BottomBar'
 import ReportSheet from './components/ReportSheet'
 import DetailSheet from './components/DetailSheet'
 import LeaderSheet from './components/LeaderSheet'
+import OfficialSheet from './components/OfficialSheet'
 import CleanedSheet from './components/CleanedSheet'
 import 'leaflet/dist/leaflet.css'
 import StatsPanel from './components/StatsPanel'
@@ -58,6 +59,7 @@ function AppContent() {
       <BottomBar />
       <ReportSheet />
       <DetailSheet />
+      <OfficialSheet />
       <LeaderSheet />
       <CleanedSheet />
     </>

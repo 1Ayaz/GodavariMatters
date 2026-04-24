@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useDragDismiss } from '../lib/useDragDismiss'
+import BottomSheet from './BottomSheet'
 import { useApp } from '../lib/store'
 import { detectJurisdiction, generateWhatsAppPayload, generateShareText } from '../lib/jurisdiction'
 import BlameTree from './BlameTree'
@@ -13,7 +13,6 @@ export default function DetailSheet() {
   const report = state.selectedReport
   const selectedWard = state.selectedWard
   const dismiss = () => { actions.selectReport(null); actions.selectWard(null) }
-  const { ref: sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useDragDismiss(dismiss)
 
   const jurisdiction = useMemo(() => {
     if (report) return detectJurisdiction(report.lat, report.lng)
@@ -40,10 +39,8 @@ export default function DetailSheet() {
   }
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && dismiss()}>
-      <div className="bottom-sheet detail-sheet" ref={sheetRef} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ transition: 'transform 0.2s ease-out' }}>
-        <div className="wcp-drag-handle" style={{ margin: '0 auto 12px' }} />
-        <div className="sheet-header" style={{ paddingTop: 0 }}>
+    <BottomSheet isOpen={!!report || !!selectedWard} onClose={dismiss} className="detail-sheet">
+      <div className="sheet-header" style={{ paddingTop: 0 }}>
           <div>
             <div className="detail-badges">
               {report ? (
@@ -176,6 +173,6 @@ export default function DetailSheet() {
           <p className="anon-badge" style={{ marginTop: 24 }}>{t('anonymous', lang)}</p>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   )
 }

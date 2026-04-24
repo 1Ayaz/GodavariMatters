@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import BottomSheet from './BottomSheet'
 import { useApp } from '../lib/store'
 import { t } from '../lib/i18n'
 
@@ -35,8 +36,7 @@ export default function CleanedSheet() {
   if (!state.showCleanedForm) return null
 
   return (
-    <div className="overlay" onClick={(e) => e.target === e.currentTarget && actions.showCleanedForm(false)}>
-      <div className="bottom-sheet small-sheet">
+    <BottomSheet isOpen={state.showCleanedForm} onClose={() => actions.showCleanedForm(false)} className="small-sheet">
         <div className="sheet-header">
           <h2>{t('mark_cleaned', lang)}</h2>
           <button className="close-btn" onClick={() => actions.showCleanedForm(false)}>&times;</button>
@@ -63,6 +63,6 @@ export default function CleanedSheet() {
           </button>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   )
 }
