@@ -222,7 +222,6 @@ export default function ReportSheet() {
           </button>
           <p className="anon-badge">{t('anonymous', lang)}</p>
         </div>
-      </div>
     </BottomSheet>
   )
 }

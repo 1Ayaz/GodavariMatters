@@ -62,7 +62,6 @@ export default function CleanedSheet() {
             {submitting ? t('submitting', lang) : t('submit_review', lang)}
           </button>
         </div>
-      </div>
     </BottomSheet>
   )
 }

@@ -172,7 +172,6 @@ export default function DetailSheet() {
           )}
           <p className="anon-badge" style={{ marginTop: 24 }}>{t('anonymous', lang)}</p>
         </div>
-      </div>
     </BottomSheet>
   )
 }

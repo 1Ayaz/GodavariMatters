@@ -178,7 +178,6 @@ export default function LeaderSheet() {
             </>
           )}
         </div>
-      </div>
     </BottomSheet>
   )
 }
