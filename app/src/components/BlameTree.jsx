@@ -141,7 +141,6 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
             </div>
           )}
         </div>
-      </div>
 
       {/* ── Elected Representatives ── */}
       <div className="bt-separator" />
