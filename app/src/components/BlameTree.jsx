@@ -51,51 +51,53 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
         <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 20 }}>{t('accountability', lang)}</h3>
 
         {/* Your Ward */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, position: 'relative', zIndex: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 0, position: 'relative', zIndex: 2 }}>
           <div style={{ border: '1.5px solid #fca5a5', borderRadius: 16, padding: '8px 24px', background: '#fff1f2', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <div style={{ fontSize: 10, color: '#ef4444', fontWeight: 700, marginBottom: 2 }}>{isUrban ? 'Your Ward' : 'Your Village'}</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#991b1b' }}>{displayName(area)}</div>
           </div>
         </div>
 
-        {/* Curved split lines SVG */}
-        <div style={{ position: 'relative', width: '100%', height: 40, marginTop: -32, marginBottom: 10, pointerEvents: 'none' }}>
-          <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
-            <path d="M100 0 Q100 30 50 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
-            <path d="M100 0 Q100 30 150 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
-          </svg>
-        </div>
+        {isUrban ? (
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
+            <div style={{ width: 120 }}>
+              <TreeNode
+                initials="RMC" img={RMC_LOGO}
+                title="Municipal Corporation" name="RMC HQ"
+                subtitle="City Administration"
+                onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
+              />
+            </div>
 
-        {/* Chain */}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
-          {isUrban ? (
-            <>
+            {/* Curved split lines SVG */}
+            <div style={{ position: 'relative', width: '100%', height: 40, marginTop: -12, marginBottom: 10, pointerEvents: 'none' }}>
+              <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <path d="M100 0 Q100 30 50 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
+                <path d="M100 0 Q100 30 150 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
+              </svg>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
               {/* Left: Executive Wing */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <TreeNode
-                  initials="RMC" img={RMC_LOGO}
-                  title="Garbage Authority" name="RMC HQ"
-                  subtitle="Garbage Authority"
-                  onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
-                />
-                <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
-                <TreeNode
                   initials="MC"
-                  title="Municipal Commissioner" name="Special Commissioner"
+                  title="Special Commissioner" name="Rahul Meena, IAS"
                   subtitle="RMC HQ · City-wide SWM Head"
-                  onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
+                  onClick={() => openContact({ roleLabel: 'Special Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
                 />
                 <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
                 <TreeNode
-                  initials="WAS"
-                  title="Ward Admin Sec" name="Zonal Commissioner"
-                  subtitle="IAS Officer · Your Zone"
-                  onClick={() => openContact({ roleLabel: 'Ward Administrative Secretary (WAS)', name: wasName, sub: `${displayName(area)} Sachivalayam · Ward team leader`, showPrivacy: true })}
+                  initials="ZC"
+                  title="Zonal Commissioner" name="IAS Officer"
+                  subtitle="Your Zone"
+                  onClick={() => openContact({ roleLabel: 'Zonal Commissioner', name: 'IAS Officer', sub: `${displayName(area)} · Zonal Head`, showPrivacy: true })}
                 />
                 <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
                 <TreeNode
                   initials="WEES"
-                  title="Ward Env & San Sec" name="JHI & AEE"
+                  title="JHI & AEE" name={wsanesName}
                   subtitle="Ward SWM staff · Monitors collection"
                   onClick={() => openContact({ roleLabel: 'Ward Environment & Sanitation Secretary (WEES)', name: wsanesName, sub: `${displayName(area)} Sachivalayam · Your ward's garbage person`, showPrivacy: true })}
                 />
@@ -111,8 +113,9 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
                   <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700 }}>Vacant since 2021</div>
                 </button>
               </div>
-            </>
-          ) : (
+            </div>
+          </div>
+        ) : (
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '0 0 8px' }} />
               <TreeNode

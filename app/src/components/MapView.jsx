@@ -320,14 +320,6 @@ export default function MapView() {
           updateWhenIdle={true}
         />
         <ZoomTracker onZoomChange={setCurrentZoom} />
-        {cityLimits && (
-          <GeoJSON 
-            key="city-limits-border"
-            data={cityLimits} 
-            style={{ color: '#000', weight: 2.5, fillOpacity: 0, opacity: 0.3, dashArray: '5 5' }} 
-            interactive={false} 
-          />
-        )}
         <InteractiveBoundaryLayer
           onHover={setHoveredArea}
           onWardZoom={handleWardZoom}

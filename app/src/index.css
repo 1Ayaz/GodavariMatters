@@ -632,7 +632,7 @@ input { font-family: var(--font); }
 }
 .elected-card:hover { transform: translateY(-2px); }
 .elected-avatar {
-  width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 10px;
+  width: 48px; height: 48px; border-radius: 4px; margin: 0 auto 10px;
   overflow: hidden; background: #f3f4f6;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
