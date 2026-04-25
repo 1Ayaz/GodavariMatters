@@ -58,13 +58,15 @@ export default function StatsPanel() {
       {/* Backdrop overlay — click to close */}
       <div className="stats-backdrop" onClick={() => actions.toggleStats()} />
 
-      <div
-        className="stats-panel visible"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className="stats-panel visible">
         {/* Drag handle */}
-        <div className="drag-handle" onClick={() => actions.toggleStats()} />
+        <div 
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ padding: '16px 0', margin: '-16px 0 0', display: 'flex', justifyContent: 'center', touchAction: 'none' }}
+        >
+          <div className="drag-handle" onClick={() => actions.toggleStats()} style={{ margin: 0 }} />
+        </div>
 
         {/* Stat cards — NammaKasa style: full-width, big numbers */}
         <div className="stats-cards">

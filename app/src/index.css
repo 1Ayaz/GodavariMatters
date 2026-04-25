@@ -583,12 +583,11 @@ input { font-family: var(--font); }
 
 .detail-stats { display: flex; gap: 8px; margin-bottom: 16px; }
 .dstat {
-  flex: 1; padding: 10px 8px; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); text-align: center;
+  flex: 1; border: 1px solid #e5e7eb; border-radius: 14px; padding: 14px 12px;
+  text-align: center; background: #fff;
 }
-.dstat-num { display: block; font-family: var(--mono); font-size: 18px; font-weight: 800; color: var(--accent); }
-.dstat-label { display: block; font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-transform: uppercase; }
-.dstat-num.monospace { font-family: var(--font); font-size: 12px; font-weight: 700; color: var(--severity-moderate); }
+.dstat-num { display: block; font-size: 20px; font-weight: 800; color: #ea580c; margin-bottom: 2px; }
+.dstat-label { display: block; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; }
 
 /* ── Accountability tree ── */
 .accountability-tree { padding: 0 0 0 4px; }
