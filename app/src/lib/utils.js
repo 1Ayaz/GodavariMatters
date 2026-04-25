@@ -9,7 +9,7 @@ export function timeAgo(date) {
 }
 
 export const POLITICIAN_PHOTOS = {
-  'Adireddy Srinivas': 'https://meeadireddy.com/wp-content/uploads/2024/06/adireddy-vasu-profile.jpg',
-  'Gorantla Butchaiah Chowdary': 'https://myneta.info/andhra_pradesh2024/candidate_photos/37.jpg',
-  'Daggubati Purandheshwari': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Daggubati_Purandeswari.jpg/220px-Daggubati_Purandeswari.jpg',
+  'Adireddy Srinivas': '/img/srinivas.jpg',
+  'Gorantla Butchaiah Chowdary': '/img/gorantla.jpg',
+  'Daggubati Purandheshwari': '/img/purandheshwari.jpg',
 }

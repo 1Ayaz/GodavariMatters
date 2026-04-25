@@ -20,7 +20,6 @@ export default function BottomSheet({ isOpen, onClose, className = '', children 
         onTouchStart={onTouchStart} 
         onTouchMove={onTouchMove} 
         onTouchEnd={onTouchEnd} 
-        style={{ transition: 'transform 0.2s ease-out' }}
       >
         <div className="wcp-drag-handle" style={{ margin: '0 auto 12px' }} />
         {children}

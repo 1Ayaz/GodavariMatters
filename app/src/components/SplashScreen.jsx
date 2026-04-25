@@ -29,40 +29,45 @@ export default function SplashScreen({ onDismiss }) {
   return (
     <div className={`splash-screen${fadeOut ? ' fade-out' : ''}`} onClick={dismiss}>
       <div className="splash-content">
-        <div className="splash-badge">RAJAMAHENDRAVARAM</div>
+        <div className="splash-logo-container">
+           <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 4px 12px rgba(232,57,14,0.3))', marginBottom: 16 }}>
+             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+             <circle cx="12" cy="10" r="3"></circle>
+           </svg>
+        </div>
         <h1 className="splash-title">
-          Our City Deserves <br />
-          <span className="splash-highlight">Better Sanitation.</span>
+          Clean <span className="splash-highlight">Rajahmundry.</span><br />
+          Together.
         </h1>
-        <p className="splash-desc">
-          ₹574 Crore Annual Budget. ₹88 Crore for Godavari Rejuvenation. <br />
-          Yet garbage piles up across our neighbourhoods.
+        <p className="splash-desc" style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: '0 auto 32px', maxWidth: 300 }}>
+          Take a photo of garbage in your area. We route it directly to the responsible Sachivalayam officials.
         </p>
 
-        <div className="splash-data-grid">
-          <div className="splash-data-card">
-            <span className="sdc-label">RMC Annual Budget</span>
-            <span className="sdc-value sdc-accent">₹574.6 Cr</span>
+        <div className="splash-features">
+          <div className="splash-feature">
+            <span className="sf-icon">📸</span>
+            <div className="sf-text">
+              <strong>Snap it</strong>
+              <span>Take a clear photo of the issue</span>
+            </div>
           </div>
-          <div className="splash-data-card">
-            <span className="sdc-label">Sanitation Allocation</span>
-            <span className="sdc-value">₹88.4 Cr</span>
+          <div className="splash-feature">
+            <span className="sf-icon">📍</span>
+            <div className="sf-text">
+              <strong>Locate it</strong>
+              <span>GPS automatically finds the ward</span>
+            </div>
           </div>
-          <div className="splash-data-card">
-            <span className="sdc-label">Monthly Ops Cost</span>
-            <span className="sdc-value sdc-accent">₹3.0 Cr</span>
-          </div>
-          <div className="splash-data-card">
-            <span className="sdc-label">Property Tax Collection</span>
-            <span className="sdc-value">82%+</span>
+          <div className="splash-feature">
+            <span className="sf-icon">✅</span>
+            <div className="sf-text">
+              <strong>Resolve it</strong>
+              <span>Track progress until it's clean</span>
+            </div>
           </div>
         </div>
 
-        <p className="splash-sub">
-          Report garbage issues in your area. <br />
-          Track civic complaints across all 50 Sachivalayams.
-        </p>
-        <div className="splash-cta">{t('splash_tap', lang)}</div>
+        <div className="splash-cta" style={{ marginTop: '40px' }}>{t('splash_tap', lang)}</div>
       </div>
       <div className="splash-brand">
         <span>Godavar<span className="splash-brand-accent">i</span>Matters</span>

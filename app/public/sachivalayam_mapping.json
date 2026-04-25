@@ -1,0 +1,286 @@
+{
+  "1064001 to 1064096. To ensure your application's routing logic works perfectly, your database must tie the user's GPS pin directly to these exact names and codes.": {
+    "name": "Below is the verified registry data compiling the Sachivalayams you need to code into your polygon metadata (Extracted from official RMC directories):",
+    "ward": "7-Digit Code"
+  },
+  "1064001": {
+    "name": "BATTINANAGAR",
+    "ward": "Ward 1"
+  },
+  "1064002": {
+    "name": "NARAYANAPURAM",
+    "ward": "Ward 2"
+  },
+  "1064003": {
+    "name": "VENKATARAMAYYANAGAR",
+    "ward": "Ward 2"
+  },
+  "1064004": {
+    "name": "ADDEPALLICOLONY",
+    "ward": "Ward 2"
+  },
+  "1064005": {
+    "name": "GOPALNAGARPUNTHA",
+    "ward": "Ward 2"
+  },
+  "1064006": {
+    "name": "SUBBARAOPETA",
+    "ward": "Ward 1 / 3"
+  },
+  "1064007": {
+    "name": "NEHRUNAGAR",
+    "ward": "Ward 3"
+  },
+  "1064008": {
+    "name": "RAJENDRANAGAR",
+    "ward": "Ward 3 / 4"
+  },
+  "1064009": {
+    "name": "KAMBALAPETA",
+    "ward": "Ward 7"
+  },
+  "1064010": {
+    "name": "GANDHIPURAM-01",
+    "ward": "Ward 50"
+  },
+  "1064011": {
+    "name": "JAMPETA-01",
+    "ward": "Ward 31"
+  },
+  "1064012": {
+    "name": "DANAVAIPETA",
+    "ward": "Ward 7 / 8"
+  },
+  "1064013": {
+    "name": "GORAKSHANAPETA",
+    "ward": "Ward 13"
+  },
+  "1064014": {
+    "name": "PRAKASAMNAGAR-01",
+    "ward": "Ward 8"
+  },
+  "1064015": {
+    "name": "PRAKASAMNAGAR-02",
+    "ward": "Ward 8"
+  },
+  "1064016": {
+    "name": "KOKABASKARAMMANAGAR",
+    "ward": "Ward 9"
+  },
+  "1064017": {
+    "name": "VIDYUTHCOLONY",
+    "ward": "Ward 9"
+  },
+  "1064018": {
+    "name": "VENKATESWARANAGAR",
+    "ward": "Ward 9 / 42"
+  },
+  "1064019": {
+    "name": "BURMACOLONY",
+    "ward": "Ward 9"
+  },
+  "1064020": {
+    "name": "NEWVLPURAM",
+    "ward": "Night Shelter Area"
+  },
+  "1064022": {
+    "name": "VLPURAM-01",
+    "ward": "V.L. Puram"
+  },
+  "1064023": {
+    "name": "ALLBANKCOLONY",
+    "ward": "Ward 10"
+  },
+  "1064026": {
+    "name": "MALLINANAGAR",
+    "ward": "Ward 11"
+  },
+  "1064027": {
+    "name": "GANDHIPURAM-02",
+    "ward": "Gandhipuram"
+  },
+  "1064028": {
+    "name": "SYAMALANAGAR",
+    "ward": "Syamala Nagar"
+  },
+  "1064029": {
+    "name": "TADITHOTA",
+    "ward": "Ward 15"
+  },
+  "1064031": {
+    "name": "AMBEDKARNAGAR-01",
+    "ward": "Ward 13"
+  },
+  "1064032": {
+    "name": "KNRPETA",
+    "ward": "Ambedkar Nagar Area"
+  },
+  "1064034": {
+    "name": "KOTHAPETA",
+    "ward": "Ward 29"
+  },
+  "1064036": {
+    "name": "INNISPETA-01",
+    "ward": "Innis Peta"
+  },
+  "1064037": {
+    "name": "INNISPETA-02",
+    "ward": "Innis Peta"
+  },
+  "1064038": {
+    "name": "INNISPETA-03",
+    "ward": "Ward 17"
+  },
+  "1064039": {
+    "name": "VEERABHADRANAGAR",
+    "ward": "Ward 16"
+  },
+  "1064040": {
+    "name": "ADARSHNAGAR",
+    "ward": "Ward 16"
+  },
+  "1064041": {
+    "name": "AVAVAMBAYCOLONY",
+    "ward": "Ward 1"
+  },
+  "1064045": {
+    "name": "ALCOTGARDENS-01",
+    "ward": "Kondavari Street"
+  },
+  "1064047": {
+    "name": "ALCOTGARDENS-02",
+    "ward": "Ward 16"
+  },
+  "1064048": {
+    "name": "KESARICLUBAREA",
+    "ward": "Kesari Club Area"
+  },
+  "1064053": {
+    "name": "BESTHAVEDHI",
+    "ward": "Ward 30"
+  },
+  "1064054": {
+    "name": "KVRSWAMYROAD",
+    "ward": "KVR Swamy Road"
+  },
+  "1064055": {
+    "name": "JANDAPANJAROAD",
+    "ward": "Merakaveedhi School"
+  },
+  "1064057": {
+    "name": "ANNAPURNAMMAPETA",
+    "ward": "Ward 30"
+  },
+  "1064059": {
+    "name": "SESHAYYAMETTA",
+    "ward": "Seshayya Metta"
+  },
+  "1064060": {
+    "name": "ARYAPURAM",
+    "ward": "Ward 34 / 40"
+  },
+  "1064061": {
+    "name": "LAKSHMIVARAPUPETA",
+    "ward": "Ward 33"
+  },
+  "1064062": {
+    "name": "JAMPETA-02",
+    "ward": "Ward 31"
+  },
+  "1064064": {
+    "name": "ADEMMADIBBA",
+    "ward": "Ward 36"
+  },
+  "1064065": {
+    "name": "TUMMALAVA",
+    "ward": "Ward 39"
+  },
+  "1064066": {
+    "name": "LINGAMPETA",
+    "ward": "Ward 39"
+  },
+  "1064069": {
+    "name": "BRUHUNNALAPETA",
+    "ward": "Ward 40"
+  },
+  "1064071": {
+    "name": "LALITHANAGAR-01",
+    "ward": "Ward 38"
+  },
+  "1064072": {
+    "name": "HARIPURAM",
+    "ward": "Ward 38"
+  },
+  "1064073": {
+    "name": "VEERABADRAPURAM",
+    "ward": "Ward 38"
+  },
+  "1064074": {
+    "name": "JAYAKRISHNAPURAM",
+    "ward": "Ward 38"
+  },
+  "1064075": {
+    "name": "RVNAGAR",
+    "ward": "Ward 42"
+  },
+  "1064077": {
+    "name": "P&TCOLONY",
+    "ward": "Ward 50"
+  },
+  "1064078": {
+    "name": "MUNICIPALCOLONY",
+    "ward": "Ratnam Peta"
+  },
+  "1064079": {
+    "name": "SUBHASHNAGAR",
+    "ward": "Municipal Colony Area"
+  },
+  "1064080": {
+    "name": "LALITHANAGAR-02",
+    "ward": "Ward 38"
+  },
+  "1064081": {
+    "name": "KOTILINGALAPETA",
+    "ward": "Ward 41"
+  },
+  "1064082": {
+    "name": "SRIRAMNAGAR",
+    "ward": "Ward 43"
+  },
+  "1064085": {
+    "name": "ANANDANAGAR",
+    "ward": "Ananda Nagar"
+  },
+  "1064086": {
+    "name": "RAMADASPETA",
+    "ward": "Old R&B Building Area"
+  },
+  "1064087": {
+    "name": "SIDDARTHANAGAR",
+    "ward": "Siddartha Nagar"
+  },
+  "1064088": {
+    "name": "INDIRASATYANAGAR",
+    "ward": "Ward 1"
+  },
+  "1064089": {
+    "name": "SARANGADHARAMETTA",
+    "ward": "Burma Colony"
+  },
+  "1064091": {
+    "name": "SIMHACHALNAGAR",
+    "ward": "Ward 49"
+  },
+  "1064092": {
+    "name": "SUBBARAONAGAR-01",
+    "ward": "Ward 49"
+  },
+  "1064095": {
+    "name": "BHASKARNAGAR",
+    "ward": "Ward 50"
+  },
+  "1064096": {
+    "name": "SESHAYYAMETTA",
+    "ward": "RMC Headquarters Area"
+  }
+}

@@ -16,15 +16,14 @@ const RMC_LOGO = 'https://upload.wikimedia.org/wikipedia/en/2/2f/Rajahmundry_Mun
 
 
 // ── Tree node ──
-function TreeNode({ initials, colorClass, title, name, subtitle, tag, onClick }) {
+function TreeNode({ initials, colorClass, title, name, subtitle, onClick, img }) {
   return (
-    <button onClick={onClick} className="bt-node" title={`Tap to contact ${title}`}>
-      <div className={`bt-avatar ${colorClass}`}><span>{initials}</span></div>
-      <div style={{ lineHeight: 1.3, textAlign: 'left', flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name || title}</div>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name ? title : subtitle}</div>
+    <button onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', width: '100%', padding: 0 }}>
+      <div style={{ width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, margin: '0 auto 8px', background: img ? 'none' : '#bfdbfe', color: '#2563eb' }} className={colorClass}>
+        {img ? <img src={img} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 16 }} /> : <span>{initials}</span>}
       </div>
-      {tag && <div style={{ fontSize: 9, padding: '3px 6px', borderRadius: 6, background: tag === 'DIRECTLY RESPONSIBLE' ? '#fee2e2' : '#f0fdf4', color: tag === 'DIRECTLY RESPONSIBLE' ? '#dc2626' : '#16a34a', fontWeight: 800, flexShrink: 0, marginLeft: 6 }}>{tag === 'DIRECTLY RESPONSIBLE' ? 'RESPONSIBLE' : tag}</div>}
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, marginBottom: 2 }}>{name || title}</div>
+      <div style={{ fontSize: 10, color: '#6b7280', fontWeight: 600 }}>{subtitle || title}</div>
     </button>
   )
 }
@@ -33,15 +32,14 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
   const { state, actions } = useApp()
   const lang = state.lang || 'en'
   const areaCode = jurisdiction?.code
-  const isUrban = jurisdiction?.type === 'urban'
-  const area = jurisdiction?.area || 'Unknown'
+  const isUrban = jurisdiction?.type === 'urban' || jurisdiction?.type === 'urban_sachivalayam' || jurisdiction?.isUrban === true
+  const area = jurisdiction?.area || jurisdiction?.name || 'Unknown'
 
   const officials = useMemo(() => {
     if (!sachivalayamOfficials || !areaCode) return null
     return sachivalayamOfficials.find(s => s.code === areaCode || `2${s.code}` === areaCode || s.code === `2${areaCode}`)
   }, [sachivalayamOfficials, areaCode])
 
-  // Ward officials
   const wsanesName = officials?.officials?.ward_sanitation_secretary?.name || officials?.officials?.ward_health_secretary?.name || 'Ward Sanitation Secretary'
   const wasName = officials?.officials?.ward_admin_secretary?.name || 'Ward Admin Secretary'
 
@@ -49,117 +47,102 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
 
   return (
     <>
-      <h3 className="section-title">{t('accountability', lang)}</h3>
+      <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, background: 'white', padding: '24px 16px', marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 20 }}>{t('accountability', lang)}</h3>
 
-      {/* ── Complaint Flow Info ── */}
-      <div style={{
-        background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12,
-        padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#92400e'
-      }}>
-        <strong style={{ display: 'block', marginBottom: 4, fontSize: 11 }}>📋 How Complaints Work</strong>
-        {isUrban
-          ? 'You report → RMC routes to your ward\'s WSanES → If unresolved, escalates to WAS → then Commissioner. Or call RMC helpline directly.'
-          : 'You report → Grama Sachivalayam EA handles sanitation → Escalate to Panchayat Secretary → then MPDO/Collectorate.'}
-      </div>
-
-      <div className="blame-tree">
         {/* Your Ward */}
-        <div className="bt-top">
-          <div className="bt-top-label">{isUrban ? t('your_ward', lang) : t('your_village', lang)}</div>
-          <div className="bt-top-value">{displayName(area)}</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, position: 'relative', zIndex: 2 }}>
+          <div style={{ border: '1.5px solid #fca5a5', borderRadius: 16, padding: '8px 24px', background: '#fff1f2', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ fontSize: 10, color: '#ef4444', fontWeight: 700, marginBottom: 2 }}>{isUrban ? 'Your Ward' : 'Your Village'}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#991b1b' }}>{displayName(area)}</div>
+          </div>
+        </div>
+
+        {/* Curved split lines SVG */}
+        <div style={{ position: 'relative', width: '100%', height: 40, marginTop: -32, marginBottom: 10, pointerEvents: 'none' }}>
+          <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
+            <path d="M100 0 Q100 30 50 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
+            <path d="M100 0 Q100 30 150 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
+          </svg>
         </div>
 
         {/* Chain */}
-        <div className="bt-chain">
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
           {isUrban ? (
             <>
-              {/* Level 1: WSanES — directly responsible */}
-              <div className="bt-line" />
-              <TreeNode
-                initials="WS" colorClass="bt-avatar-accent"
-                title="Ward Sanitation Secretary" name={wsanesName}
-                subtitle="Garbage collection, street sweeping, drain cleaning"
-                tag="DIRECTLY RESPONSIBLE"
-                onClick={() => openContact({ roleLabel: 'Ward Sanitation & Environment Secretary (WSanES)', name: wsanesName, sub: `${displayName(area)} Sachivalayam · Your ward's garbage person`, showPrivacy: true })}
-              />
-              {/* Level 2: WAS — escalation */}
-              <div className="bt-line" />
-              <TreeNode
-                initials="WAS" colorClass="bt-avatar-blue"
-                title="Ward Admin Secretary" name={wasName}
-                subtitle="Team leader — escalation if WSanES doesn't act"
-                tag="ESCALATION"
-                onClick={() => openContact({ roleLabel: 'Ward Administrative Secretary (WAS)', name: wasName, sub: `${displayName(area)} Sachivalayam · Ward team leader`, showPrivacy: true })}
-              />
-              {/* Level 3: RMC */}
-              <div className="bt-line" />
-              <TreeNode
-                initials="RMC" colorClass="bt-avatar-blue"
-                title="RMC Helpline" name="Rajamahendravaram MC"
-                subtitle="City-wide complaint routing (9494-060-060)"
-                onClick={() => openContact({ roleLabel: 'RMC Helpline', name: 'Rajamahendravaram Municipal Corporation', sub: 'Official grievance channel · Routes complaints to wards', showRmcLogo: true })}
-              />
-              {/* Level 4: Commissioner */}
-              <div className="bt-line" />
-              <TreeNode
-                initials="MC" colorClass="bt-avatar-dark"
-                title="Municipal Commissioner" name="Rahul Meena, IAS"
-                subtitle="Final authority · Dial Your Commissioner (Mon 10-11 AM)"
-                onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
-              />
+              {/* Left: Executive Wing */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <TreeNode
+                  initials="RMC" img={RMC_LOGO}
+                  title="Garbage Authority" name="RMC HQ"
+                  subtitle="Garbage Authority"
+                  onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
+                />
+                <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
+                <TreeNode
+                  initials="MC"
+                  title="Municipal Commissioner" name="Special Commissioner"
+                  subtitle="RMC HQ · City-wide SWM Head"
+                  onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
+                />
+                <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
+                <TreeNode
+                  initials="WAS"
+                  title="Ward Admin Sec" name="Zonal Commissioner"
+                  subtitle="IAS Officer · Your Zone"
+                  onClick={() => openContact({ roleLabel: 'Ward Administrative Secretary (WAS)', name: wasName, sub: `${displayName(area)} Sachivalayam · Ward team leader`, showPrivacy: true })}
+                />
+                <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
+                <TreeNode
+                  initials="WEES"
+                  title="Ward Env & San Sec" name="JHI & AEE"
+                  subtitle="Ward SWM staff · Monitors collection"
+                  onClick={() => openContact({ roleLabel: 'Ward Environment & Sanitation Secretary (WEES)', name: wsanesName, sub: `${displayName(area)} Sachivalayam · Your ward's garbage person`, showPrivacy: true })}
+                />
+              </div>
+
+              {/* Right: Political Wing */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button onClick={() => alert('Ward Corporator positions are currently vacant.')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', width: '100%', padding: 0, opacity: 0.7 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', border: '1.5px solid #fde68a', background: '#fffbeb', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#9ca3af', lineHeight: 1.2, marginBottom: 2 }}>Corporator</div>
+                  <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700 }}>Vacant since 2021</div>
+                </button>
+              </div>
             </>
           ) : (
-            <>
-              {/* Rural: EA → PS → Sarpanch → MPDO */}
-              <div className="bt-line" />
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '0 0 8px' }} />
               <TreeNode
-                initials="EA" colorClass="bt-avatar-accent"
+                initials="EA"
                 title={t('ea', lang)} name={t('ea', lang)}
                 subtitle="Village sanitation & waste management"
-                tag="DIRECTLY RESPONSIBLE"
                 onClick={() => openContact({ roleLabel: t('ea', lang), name: t('ea', lang), sub: `${displayName(area)} · Sanitation + infrastructure`, isRural: true, showPrivacy: true })}
               />
-              <div className="bt-line" />
+              <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
               <TreeNode
-                initials="PS" colorClass="bt-avatar-blue"
+                initials="PS"
                 title={t('ps', lang)} name={`${t('ps', lang)} (Gr-V)`}
                 subtitle="Head of Grama Sachivalayam"
-                tag="ESCALATION"
                 onClick={() => openContact({ roleLabel: t('ps', lang), name: t('ps', lang), sub: displayName(area), isRural: true, showPrivacy: true })}
               />
-              <div className="bt-line" />
+              <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
               <TreeNode
-                initials="SR" colorClass="bt-avatar-green"
+                initials="SR" colorClass="bg-green-100 text-green-700"
                 title="Sarpanch" name="Elected Village Head"
                 subtitle="Political accountability for village cleanliness"
                 onClick={() => openContact({ roleLabel: 'Sarpanch', name: 'Elected Village Head', sub: displayName(area), isRural: true })}
               />
-              <div className="bt-line" />
-              <TreeNode
-                initials="MPD" colorClass="bt-avatar-dark"
-                title="MPDO" name="Mandal Parishad Dev. Officer"
-                subtitle="Mandal-level administration"
-                onClick={() => openContact({ roleLabel: 'MPDO', name: 'MPDO - Rajamahendravaram Rural', sub: 'Mandal-level escalation for rural areas', isRural: true })}
-              />
-            </>
+            </div>
           )}
         </div>
-
-        {/* Corporator status banner */}
-        {isUrban && (
-          <div style={{
-            marginTop: 12, padding: '8px 14px', borderRadius: 10,
-            background: '#fef3cd', border: '1px solid #fde68a', fontSize: 11,
-            color: '#92400e', textAlign: 'center', lineHeight: 1.4
-          }}>
-            <strong>⚠ Ward Corporators:</strong> Currently vacant. RMC is under Special Officer administration. Municipal elections pending.
-          </div>
-        )}
       </div>
 
       {/* ── Elected Representatives ── */}
       <div className="bt-separator" />
-      <h3 className="section-title" style={{ color: '#9ca3af' }}>{t('elected_reps', lang)}</h3>
+      <h3 className="elected-section-title">ELECTED REPRESENTATIVES FOR THIS WARD</h3>
       <div className="elected-row">
         {jurisdiction?.mla && (
           <div className="elected-card" onClick={() => onPoliticianClick?.({ ...jurisdiction.mla, type: 'MLA' })}>
@@ -186,7 +169,7 @@ export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPolit
           </div>
         )}
       </div>
-      <p className="bt-note">{t('tap_contact', lang)}</p>
+      <p className="bt-note">Tap any card for contact options · Corporator elections expected mid-2026</p>
     </>
   )
 }

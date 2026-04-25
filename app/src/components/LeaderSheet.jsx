@@ -140,7 +140,7 @@ export default function LeaderSheet() {
               <h3 className="section-title">WORST WARDS</h3>
               <div className="worst-wards-list">
                 {stats.worstAreas.map((area, i) => (
-                  <div key={area.name} className="worst-ward-item">
+                  <div key={area.name} className="worst-ward-item" onClick={() => { actions.selectLeader(null); actions.selectWard({ name: area.name, isUrban: leader.constituency.includes('City') || true }); }}>
                     <span className={`worst-ward-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
                     <div className="worst-ward-info">
                       <div className="worst-ward-name">{displayName(area.name)}</div>
@@ -163,7 +163,7 @@ export default function LeaderSheet() {
                   return (
                     <div key={r.id} className="recent-report-item" onClick={() => { actions.selectLeader(null); actions.selectReport(r); }}>
                       {r.image_url && (
-                        <img src={r.image_url} className="recent-report-thumb" alt=""
+                        <img src={r.image_url} className="recent-report-thumb skeleton-img" alt=""
                           onError={(e) => { e.target.style.display = 'none' }} />
                       )}
                       <div className="recent-report-info">

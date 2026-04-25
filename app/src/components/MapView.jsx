@@ -17,9 +17,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// Center covering both Urban and Rural Rajahmundry
-const RJY_CENTER = [17.005, 81.780]
-const RJY_ZOOM = 13
+// Center covering Rajahmundry Urban
+const RJY_CENTER = [17.005, 81.78]
+const RJY_ZOOM = 14.5
 
 // NammaKasa-style: restrict bounds to Rajahmundry area so user can't zoom out to see the whole world
 const RJY_BOUNDS = L.latLngBounds(
@@ -82,74 +82,24 @@ function getCentroid(feature) {
 }
 
 
-// ── Ward count bubbles — only visible at lower zoom levels ──
-function WardBubbles({ boundaries, reportsByArea, onBubbleClick, visible }) {
-  if (!boundaries || !visible) return null
 
-  return boundaries.features.map((feature) => {
-    const name = feature.properties.name || 'Unknown'
-    let matchName = normalizeKey(name)
-    if (matchName.includes('SESHAYYAMETTA')) matchName = 'SESHAYYAMETTA'
-    const stats = reportsByArea[matchName]
-    const count = stats?.active || 0
-    if (count === 0) return null
-
-    const center = feature.properties.lat && feature.properties.lng 
-      ? [feature.properties.lat, feature.properties.lng]
-      : getCentroid(feature)
-    // NammaKasa-style: dark red circles scaled by count
-    const baseSize = 28
-    let size = Math.min(80, baseSize + (count * 5))
-    
-    const icon = L.divIcon({
-      className: '',
-      html: `<div class="ward-bubble has-reports" style="width:${size}px;height:${size}px;font-size:${size > 50 ? 18 : 14}px">
-        ${count}
-      </div>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    })
-
-    return (
-      <Marker 
-        key={name} 
-        position={center} 
-        icon={icon}
-        eventHandlers={{
-          click: (e) => {
-            L.DomEvent.stopPropagation(e)
-            onBubbleClick?.({
-              name,
-              matchName,
-              count,
-              center,
-              isUrban: feature.properties.type === 'urban_sachivalayam',
-              code: feature.properties.code,
-            })
-          }
-        }}
-      />
-    )
-  })
-}
 
 // ── Report dot markers — clustered ──
-function ReportMarkers({ onReportPreview, visible }) {
+function ReportMarkers({ onReportPreview }) {
   const { filteredReports } = useApp()
-  if (!visible) return null
   
   return (
     <MarkerClusterGroup
       chunkedLoading
-      maxClusterRadius={45}
+      maxClusterRadius={60}
       showCoverageOnHover={false}
       spiderfyOnMaxZoom={true}
       iconCreateFunction={(cluster) => {
         const count = cluster.getChildCount()
         const markers = cluster.getAllChildMarkers()
         
-        // A marker is resolved if its HTML contains the green background color #16a34a
-        const activeCount = markers.filter(m => !m.options.icon.options.html.includes('#16a34a')).length
+        // A marker is resolved if its options.isResolved flag is true
+        const activeCount = markers.filter(m => !m.options.isResolved).length
         
         const size = Math.min(60, 32 + (count * 2))
         
@@ -189,6 +139,7 @@ function ReportMarkers({ onReportPreview, visible }) {
             key={report.id}
             position={[report.lat, report.lng]}
             icon={dotIcon}
+            isResolved={isResolved}
             eventHandlers={{
               click: (e) => {
                 L.DomEvent.stopPropagation(e)
@@ -217,16 +168,19 @@ function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimi
     let name = normalizeKey(feature.properties.name || '')
     if (name.includes('SESHAYYAMETTA')) name = 'SESHAYYAMETTA'
     const stats = reportsByArea?.[name]
-    const count = stats?.total || 0
+    const count = stats?.active || 0
+    const total = stats?.total || 0
     const resolved = stats?.resolved || 0
-    const isFullyResolved = count > 0 && count === resolved
-    const fillOpacity = count > 0 ? Math.min(0.6, 0.05 + count * 0.05) : 0
+    const isFullyResolved = total > 0 && total === resolved
+    const hasActiveReports = count > 0
+
+    // Premium Aesthetics: No border by default, just subtle fill
     return {
-      color: 'rgba(0,0,0,0.06)',
-      weight: 0.5,
-      opacity: 0.3,
-      fillColor: isFullyResolved ? '#16a34a' : '#E8390E',
-      fillOpacity,
+      color: 'transparent',
+      weight: 0,
+      opacity: 0,
+      fillColor: hasActiveReports ? '#EF4444' : isFullyResolved ? '#22C55E' : '#000',
+      fillOpacity: hasActiveReports ? 0.05 + (count * 0.02) : 0, // Very subtle transparent fill
     }
   }, [reportsByArea])
 
@@ -239,14 +193,14 @@ function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimi
     layer.on({
       mouseover: (e) => {
         if (hoveredRef.current && hoveredRef.current !== e.target) {
-          hoveredRef.current.setStyle({ weight: 0.5, color: 'rgba(0,0,0,0.06)' })
+          hoveredRef.current.setStyle({ weight: 0, color: 'transparent' })
         }
-        e.target.setStyle({ weight: 2, color: '#E8390E' })
+        e.target.setStyle({ weight: 2, color: '#E8390E', opacity: 0.9 })
         hoveredRef.current = e.target
         onHover?.({ name, count, isUrban, rawName: name })
       },
       mouseout: (e) => {
-        e.target.setStyle({ weight: 0.5, color: 'rgba(0,0,0,0.06)' })
+        e.target.setStyle({ weight: 0, color: 'transparent' })
         hoveredRef.current = null
         onHover?.(null)
       },
@@ -266,46 +220,10 @@ function InteractiveBoundaryLayer({ onHover, onWardZoom, reportsByArea, cityLimi
   const urban = geojson.features.filter(f => f.properties.type === 'urban_sachivalayam')
   const rural = geojson.features.filter(f => f.properties.type !== 'urban_sachivalayam')
 
-  // Outside-city mask
-  let maskGeoJSON = null
-  if (cityLimits) {
-    try {
-      const world = { type: 'Polygon', coordinates: [[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]]] }
-      const cityCoords = cityLimits.type === 'FeatureCollection'
-        ? cityLimits.features[0].geometry.coordinates
-        : cityLimits.geometry
-          ? cityLimits.geometry.coordinates
-          : cityLimits.coordinates
-      maskGeoJSON = {
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [world.coordinates[0], ...(Array.isArray(cityCoords[0][0][0]) ? cityCoords.flat() : cityCoords)] }
-      }
-    } catch(e) {}
-  }
-
-  const maskStyle = {
-    fillColor: '#f8f8fa',
-    fillOpacity: 0.85,
-    color: 'transparent',
-    weight: 0,
-    interactive: false
-  }
-  const boundaryLineStyle = {
-    color: 'rgba(232,57,14,0.2)',
-    weight: 1.5,
-    dashArray: '6 4',
-    fillOpacity: 0,
-    interactive: false
-  }
-
   if (!rural || !urban) return null
 
   return (
     <>
-      {/* Outside mask — grays out areas outside city limits */}
-      {maskGeoJSON && <GeoJSON key="city_mask" data={maskGeoJSON} style={() => maskStyle} />}
-      {/* Subtle boundary line on city edge */}
-      {cityLimits && <GeoJSON key="city_border" data={cityLimits} style={() => boundaryLineStyle} />}
       <GeoJSON key="rural" data={rural} style={getBoundaryStyle} onEachFeature={onEachRural} />
       <GeoJSON key="urban" data={urban} style={getBoundaryStyle} onEachFeature={onEachUrban} />
     </>
@@ -361,7 +279,6 @@ export default function MapView() {
         duration: 0.8,
       })
     }
-    setPreviewReport(null)
   }
 
   const handleBubbleClick = (data) => {
@@ -403,19 +320,20 @@ export default function MapView() {
           updateWhenIdle={true}
         />
         <ZoomTracker onZoomChange={setCurrentZoom} />
+        {cityLimits && (
+          <GeoJSON 
+            key="city-limits-border"
+            data={cityLimits} 
+            style={{ color: '#000', weight: 2.5, fillOpacity: 0, opacity: 0.3, dashArray: '5 5' }} 
+            interactive={false} 
+          />
+        )}
         <InteractiveBoundaryLayer
           onHover={setHoveredArea}
           onWardZoom={handleWardZoom}
           reportsByArea={reportsByArea}
-          cityLimits={cityLimits}
         />
-        <WardBubbles 
-          boundaries={boundaries} 
-          reportsByArea={reportsByArea} 
-          onBubbleClick={handleBubbleClick}
-          visible={showBubbles}
-        />
-        <ReportMarkers onReportPreview={handleReportPreview} visible={!showBubbles} />
+        <ReportMarkers onReportPreview={handleReportPreview} />
         <MapControls />
       </MapContainer>
 

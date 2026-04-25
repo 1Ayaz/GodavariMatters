@@ -97,8 +97,15 @@ export function AppProvider({ children }) {
         }
         dispatch({ type: 'SET_DATA', boundaries, governance, sachivalayamOfficials })
         let reports = await getReports()
-        
-        if (reports.length === 0) reports = MOCK_REPORTS
+        if (reports.length === 0) {
+          reports = MOCK_REPORTS.map(r => {
+            const jur = detectJurisdiction(r.lat, r.lng)
+            if (jur) {
+              return { ...r, assigned_area: jur.area, area_type: jur.type, area_code: jur.code }
+            }
+            return r
+          })
+        }
         
         dispatch({ type: 'SET_REPORTS', reports })
       } catch (e) {

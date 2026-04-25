@@ -15,7 +15,7 @@ let governanceData = null
 export async function loadData() {
   if (!boundaryData) {
     const [geoRes, govRes] = await Promise.all([
-      fetch('/rajahmundry_combined.geojson'),
+      fetch('/rajahmundry_sachivalayams.geojson'),
       fetch('/governance.json')
     ])
     boundaryData = await geoRes.json()
