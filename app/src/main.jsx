@@ -1,14 +1,19 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
-import AdminPage from './pages/AdminPage.jsx'
 import './index.css'
 
-// Simple hash-based router — /admin goes to AdminPage
+// AdminPage is only needed on /admin — lazy-load so it doesn't
+// bloat the main bundle for regular users
+const AdminPage = lazy(() => import('./pages/AdminPage.jsx'))
+
 const isAdmin = window.location.pathname === '/admin'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {isAdmin ? <AdminPage /> : <App />}
+    {isAdmin
+      ? <Suspense fallback={null}><AdminPage /></Suspense>
+      : <App />
+    }
   </StrictMode>,
 )

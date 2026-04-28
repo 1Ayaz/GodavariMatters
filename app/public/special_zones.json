@@ -1,0 +1,58 @@
+{
+  "parks": [
+    {
+      "id": "kambala_cheruvu",
+      "name": "Kambala Cheruvu Park",
+      "polygon": [[17.0125, 81.7905], [17.0145, 81.7905], [17.0145, 81.7925], [17.0125, 81.7925], [17.0125, 81.7905]],
+      "zoneType": "park"
+    },
+    {
+      "id": "gandhi_park",
+      "name": "Gandhi Park",
+      "polygon": [[17.0085, 81.7815], [17.0095, 81.7815], [17.0095, 81.7825], [17.0085, 81.7825], [17.0085, 81.7815]],
+      "zoneType": "park"
+    },
+    {
+      "id": "central_jail_park",
+      "name": "Central Jail Park",
+      "polygon": [[17.0140, 81.7945], [17.0160, 81.7945], [17.0160, 81.7965], [17.0140, 81.7965], [17.0140, 81.7945]],
+      "zoneType": "park"
+    },
+    {
+      "id": "pvnr_park",
+      "name": "P.V. Narasimha Rao Park",
+      "polygon": [[17.0015, 81.7735], [17.0025, 81.7735], [17.0025, 81.7755], [17.0015, 81.7755], [17.0015, 81.7735]],
+      "zoneType": "park"
+    }
+  ],
+  "ghats": [
+    {
+      "id": "main_city_ghats",
+      "name": "Main City Ghat Cluster",
+      "ghats_included": ["Pushkar", "Saraswathi (VIP)", "Padmavathi", "Gowthami", "Sradhananda", "TTD", "Gowthami"],
+      "polygon": [[17.0045, 81.7665], [17.0045, 81.7705], [16.9975, 81.7735], [16.9975, 81.7695], [17.0045, 81.7665]],
+      "zoneType": "ghat"
+    },
+    {
+      "id": "northern_heritage_ghats",
+      "name": "Northern Heritage Cluster",
+      "ghats_included": ["Kotilingala (PMK)", "Markandeya Swamy", "Kotilingalapeta", "Sankar"],
+      "polygon": [[17.0230, 81.7620], [17.0230, 81.7655], [17.0175, 81.7680], [17.0175, 81.7645], [17.0230, 81.7620]],
+      "zoneType": "ghat"
+    },
+    {
+      "id": "alcot_gardens_ghats",
+      "name": "Alcot Gardens Strip",
+      "ghats_included": ["Alcot Gardens", "Ladies Revu", "Gents Revu"],
+      "polygon": [[16.9970, 81.7695], [16.9970, 81.7720], [16.9920, 81.7740], [16.9920, 81.7715], [16.9970, 81.7695]],
+      "zoneType": "ghat"
+    },
+    {
+      "id": "dowleswaram_ghats",
+      "name": "Dowleswaram Southern Strip",
+      "ghats_included": ["VIP Bathing Ghat (Dowleswaram)", "Chinthala"],
+      "polygon": [[16.9535, 81.7770], [16.9535, 81.7805], [16.9455, 81.7830], [16.9455, 81.7800], [16.9535, 81.7770]],
+      "zoneType": "ghat"
+    }
+  ]
+}

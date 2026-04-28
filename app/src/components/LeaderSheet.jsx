@@ -17,15 +17,8 @@ export default function LeaderSheet() {
   const stats = useMemo(() => {
     if (!leader) return null
     
-    // Filter reports based on leader's constituency
-    const allReports = state.reports.filter(r => {
-      if (leader.type === 'MLA') {
-        if (leader.constituency.includes('City')) return r.area_type === 'urban'
-        if (leader.constituency.includes('Rural')) return r.area_type === 'rural'
-      }
-      // MP or unknown type gets all reports
-      return true
-    })
+    // All GRMC — no urban/rural split
+    const allReports = state.reports
     
     const active = allReports.filter(r => r.status !== 'resolved')
     const resolved = allReports.filter(r => r.status === 'resolved')
@@ -140,7 +133,7 @@ export default function LeaderSheet() {
               <h3 className="section-title">WORST WARDS</h3>
               <div className="worst-wards-list">
                 {stats.worstAreas.map((area, i) => (
-                  <div key={area.name} className="worst-ward-item" onClick={() => { actions.selectLeader(null); actions.selectWard({ name: area.name, isUrban: leader.constituency.includes('City') || true }); }}>
+                  <div key={area.name} className="worst-ward-item" onClick={() => { actions.selectLeader(null); actions.selectWard({ name: area.name }); }}>
                     <span className={`worst-ward-rank${i < 3 ? ' top3' : ''}`}>{i + 1}</span>
                     <div className="worst-ward-info">
                       <div className="worst-ward-name">{displayName(area.name)}</div>

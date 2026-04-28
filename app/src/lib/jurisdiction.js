@@ -1,39 +1,60 @@
 /**
  * GodavariMatters — Jurisdiction Engine
- * 
- * Given a GPS coordinate, determines which Sachivalayam/Village 
- * the point falls in using the GeoJSON polygon boundary data.
- * Routes to the correct official based on urban vs rural.
+ *
+ * Given a GPS coordinate, determines which Sachivalayam/area
+ * the point falls in using GeoJSON polygon boundary data.
+ *
+ * Zone priority (checked in order):
+ *   1. Park polygon  → blame chain: Park Staff → AD Horticulture → Commissioner
+ *   2. Ghat polygon  → blame chain: Private Agency → MHO → Commissioner
+ *   3. Ward polygon  → blame chain: WEES → WAS → Commissioner  (all GRMC urban)
  */
 
-let boundaryData = null
+let detectionData = null   // 104 features — for GPS point-in-polygon (original combined, full coverage)
+let mapRenderData = null   // 104 features — for map polygon rendering (trimmed, zero overlap)
 let governanceData = null
+let specialZonesData = null
 
 /**
- * Load boundary and governance data
+ * Load boundary, governance, and special-zones data (cached after first call)
+ *
+ * Three boundary/data files:
+ *   - rajahmundry_combined.geojson (104 features) → GPS jurisdiction detection
+ *     Original boundaries for accurate point-in-polygon (includes overlapping rural)
+ *   - rajahmundry_grmc.geojson (104 features) → Map polygon rendering
+ *     Trimmed: sachivalayams untouched + rural areas clipped to remove overlap
+ *   - governance.json, special_zones.json → metadata
  */
 export async function loadData() {
-  if (!boundaryData) {
-    const [geoRes, govRes] = await Promise.all([
-      fetch('/rajahmundry_sachivalayams.geojson'),
-      fetch('/governance.json')
+  if (!detectionData) {
+    const [combinedRes, grmcRes, govRes, zonesRes] = await Promise.all([
+      fetch('/rajahmundry_combined.geojson'),
+      fetch('/rajahmundry_grmc.geojson'),
+      fetch('/governance.json'),
+      fetch('/special_zones.json'),
     ])
-    boundaryData = await geoRes.json()
-    governanceData = await govRes.json()
+    detectionData    = await combinedRes.json()
+    mapRenderData    = await grmcRes.json()
+    governanceData   = await govRes.json()
+    specialZonesData = await zonesRes.json()
   }
-  return { boundaries: boundaryData, governance: governanceData }
+  return { boundaries: mapRenderData, governance: governanceData, specialZones: specialZonesData }
 }
 
+// ── Geometry helpers ──────────────────────────────────────────────────────────
+
 /**
- * Point-in-polygon test using ray casting algorithm
+ * Ray-casting point-in-polygon test.
+ * @param {[number, number]} point  [lng, lat]
+ * @param {[number, number][]} polygon  array of [lat, lng] pairs  ← note lat/lng order from JSON
  */
-function pointInPolygon(point, polygon) {
-  const [x, y] = point // [lng, lat]
+function pointInPolygonLatLng(lat, lng, polygon) {
+  // polygon entries are [lat, lng]
   let inside = false
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i]
-    const [xj, yj] = polygon[j]
-    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+    const [yi, xi] = polygon[i]
+    const [yj, xj] = polygon[j]
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
       inside = !inside
     }
   }
@@ -41,157 +62,173 @@ function pointInPolygon(point, polygon) {
 }
 
 /**
- * Check if a point falls within a GeoJSON feature
+ * Point-in-polygon for GeoJSON features (coordinates are [lng, lat])
  */
 function isPointInFeature(lng, lat, feature) {
   const geom = feature.geometry
   if (geom.type === 'Polygon') {
-    return pointInPolygon([lng, lat], geom.coordinates[0])
+    return pointInPolygonLngLat(lng, lat, geom.coordinates[0])
   } else if (geom.type === 'MultiPolygon') {
-    return geom.coordinates.some(poly => pointInPolygon([lng, lat], poly[0]))
+    return geom.coordinates.some(poly => pointInPolygonLngLat(lng, lat, poly[0]))
   }
   return false
 }
 
-/**
- * Haversine distance for nearest-neighbor fallback
- */
-function haversineDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371e3
-  const toRad = d => d * Math.PI / 180
-  const dLat = toRad(lat2 - lat1)
-  const dLng = toRad(lng2 - lng1)
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+function pointInPolygonLngLat(lng, lat, ring) {
+  // ring entries are [lng, lat]
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]
+    const [xj, yj] = ring[j]
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+      inside = !inside
+    }
+  }
+  return inside
 }
 
 /**
- * Get the centroid of a polygon for distance calculation
+ * Get the centroid of a GeoJSON polygon feature
  */
-function getCentroid(feature) {
+export function getCentroid(feature) {
   const coords = feature.geometry.type === 'Polygon'
     ? feature.geometry.coordinates[0]
     : feature.geometry.coordinates[0][0]
   const n = coords.length
   const sum = coords.reduce((acc, c) => [acc[0] + c[0], acc[1] + c[1]], [0, 0])
-  return [sum[0] / n, sum[1] / n]
+  return [sum[0] / n, sum[1] / n] // [lng, lat]
 }
 
+// ── Special zone detection ────────────────────────────────────────────────────
+
 /**
- * CORE: Detect jurisdiction for a given GPS coordinate
- * Returns: { area, type, official, mla, mp, wasteType routing }
+ * Detect if a GPS coordinate falls in a park or ghat special zone.
+ * Must be called BEFORE detectJurisdiction's ward lookup.
+ * Returns null if not in any special zone.
+ */
+export function detectSpecialZone(lat, lng) {
+  if (!specialZonesData) return null
+
+  // Check parks first
+  for (const park of specialZonesData.parks) {
+    if (pointInPolygonLatLng(lat, lng, park.polygon)) {
+      return { zoneType: 'park', zone: park }
+    }
+  }
+
+  // Then ghats
+  for (const ghat of specialZonesData.ghats) {
+    if (pointInPolygonLatLng(lat, lng, ghat.polygon)) {
+      return { zoneType: 'ghat', zone: ghat }
+    }
+  }
+
+  return null
+}
+
+// ── Main jurisdiction detector ────────────────────────────────────────────────
+
+/**
+ * CORE: Detect jurisdiction for a given GPS coordinate.
+ * Returns a jurisdiction object used by BlameTree and complaint routing.
+ *
+ * The returned object always includes:
+ *   - area, type, code, ward
+ *   - mla, mp
+ *   - specialZone: null | { zoneType: 'park'|'ghat', zone }
+ *   - complaintChannels, routing
  */
 export function detectJurisdiction(lat, lng) {
-  if (!boundaryData || !governanceData) return null
+  if (!detectionData || !governanceData) return null
 
-  // Step 1: Try exact polygon match
+  const gov = governanceData
+
+  // Step 1: Check special zones (parks, ghats) — highest priority
+  const specialZone = detectSpecialZone(lat, lng)
+
+  // Step 2: Try exact ward polygon match (uses 104-feature combined data)
   let matched = null
-  for (const feature of boundaryData.features) {
+  for (const feature of detectionData.features) {
     if (isPointInFeature(lng, lat, feature)) {
       matched = feature
       break
     }
   }
 
-  // Step 2: No nearest-neighbor fallback — strict geofence
-  if (!matched) return null
+  // If outside all known boundaries, return null (hard geofence)
+  if (!matched && !specialZone) return null
 
-  const props = matched.properties
-  const isUrban = props.type === 'urban_sachivalayam'
-  const isRural = props.type === 'rural_village' || props.type === 'rural_peri_urban'
+  const props = matched?.properties || {}
 
-  // Build MLA/MP info from governance data
-  const gov = governanceData
-  const mla = isUrban ? gov.urban.mla : gov.rural.mla
+
+  const mla = gov.urban.mla
   const mp = gov.parliamentary_constituency
 
-  // Build responsible official
-  let official
-  if (isUrban) {
-    official = {
-      role: gov.urban.responsible_official.role,
-      short: gov.urban.responsible_official.short,
-      department: gov.urban.responsible_official.department,
-      note: `Sachivalayam: ${props.name || 'Unknown'}`
-    }
-  } else {
-    official = {
-      role: gov.rural.responsible_official.role,
-      short: gov.rural.responsible_official.short,
-      department: gov.rural.responsible_official.department,
-      note: `Village: ${props.name || 'Unknown'}`
-    }
-  }
-
   return {
-    area: props.name || 'Unknown Area',
+    area: props.name || specialZone?.zone?.name || 'Unknown Area',
     code: props.code || props.village_code || '',
     ward: props.ward || '',
-    type: isUrban ? 'urban' : 'rural',
     feature: matched,
-    official,
-    mla: {
-      name: mla.name,
-      party: mla.party,
-      constituency: mla.constituency
-    },
-    mp: {
-      name: mp.mp,
-      party: mp.party,
-      constituency: mp.name
-    },
-    corporation: isUrban ? gov.urban.corporation : null,
-    administration: isRural ? gov.rural.administration : null,
-    complaintChannels: isUrban ? gov.urban.complaint_channels : gov.rural.complaint_channels,
-    routing: gov.complaint_routing
+    mla: { name: mla.name, party: mla.party, constituency: mla.constituency },
+    mp: { name: mp.mp, party: mp.party, constituency: mp.name },
+    corporation: gov.urban.corporation,
+    specialZone: specialZone || null,
+    complaintChannels: gov.urban.complaint_channels,
   }
 }
 
+// ── WhatsApp complaint payload ────────────────────────────────────────────────
+
 /**
- * Generate WhatsApp complaint payload
+ * Generate WhatsApp complaint payload.
+ * ALL complaints route to RMC helpline — special zone entries are for blame display only.
  */
 export function generateWhatsAppPayload(report, jurisdiction, seenCount = 0) {
-  const isRiverGhat = report.waste_type === 'River / Ghat'
-  const isUrban = jurisdiction.type === 'urban'
+  const specialZone = jurisdiction?.specialZone
+  const zoneType = specialZone?.zoneType  // 'park' | 'ghat' | undefined
 
+  // Build prefix and responsible party string based on zone
   let prefix = '🚨 GodavariMatters: Public Sanitation Alert 🚨'
-  if (isRiverGhat) {
-    prefix = '🚨 GodavariMatters: JOINT-STRIKE River Pollution Alert 🚨'
+  let responsibleLine = ''
+
+  if (zoneType === 'park') {
+    prefix = '🌳 GodavariMatters: Public Park Cleanliness Alert 🌳'
+    responsibleLine = `🎯 *Responsible:* Park Maintenance Staff → AD Horticulture (Parks Dept, GRMC)
+📍 *Zone:* ${specialZone.zone.name}`
+  } else if (zoneType === 'ghat') {
+    prefix = '🚨 GodavariMatters: Riverfront / Ghat Sanitation Alert 🚨'
+    responsibleLine = `🎯 *Responsible:* Private Maintenance Agency (contract) → MHO (Dr. Vinuthna)
+📍 *Zone:* ${specialZone.zone.name}
+⚠️ *Additional:* Also report to APPCB Toll-free: 18004252738 if river water is polluted`
+  } else {
+    responsibleLine = `🎯 *Responsible:* Ward Environment & Sanitation Secretary (WEES)
+🗺️ *Ward/Sachivalayam:* ${jurisdiction?.area || 'Unknown'}`
   }
 
   let msg = `${prefix}
 
 📍 *Issue:* ${report.waste_type} — ${report.severity.toUpperCase()}
 📌 *Landmark:* ${report.landmark}
-🗺️ *Live GPS Map:* https://www.google.com/maps?q=${report.lat},${report.lng}
-📸 *Photographic Proof:* ${report.image_url}
+🗺️ *Live GPS:* https://www.google.com/maps?q=${report.lat},${report.lng}
+📸 *Photo:* ${report.image_url}
 
-🎯 *JURISDICTION ASSIGNMENT*
-According to spatial mapping data, this coordinate falls under *${jurisdiction.area}* (${jurisdiction.type === 'urban' ? 'Ward Sachivalayam' : 'Gram Panchayat'}).
-
-👤 *Responsible Official:* ${jurisdiction.official.role}
-🏛️ *Department:* ${jurisdiction.official.department}`
+${responsibleLine}
+🏛️ *Authority:* Greater Rajamahendravaram Municipal Corporation (GRMC)`
 
   if (seenCount > 0) {
-    msg += `\n\n✅ *Verified Alert:* This issue has been physically verified by *${seenCount} citizens* on the GodavariMatters network.`
+    msg += `\n\n✅ *Verified:* This issue has been confirmed by *${seenCount} citizens* on the GodavariMatters network.`
   }
 
-  if (isRiverGhat) {
-    msg += `\n\n⚠️ *Jurisdiction Overlap Detected.*
-Both *Rajamahendravaram Municipal Corporation* and *AP Pollution Control Board (APPCB)* are publicly accountable for this coordinate.
-APPCB Toll-free: 18004252738`
-  }
-
-  msg += `\n\nPlease log this into the Spandana system and dispatch ${jurisdiction.official.short} to resolve immediately.
+  msg += `\n\nPlease log this in the Spandana/PGRS system and dispatch the responsible team immediately.
 
 — GodavariMatters · godavari-matters.vercel.app`
 
-  // Determine WhatsApp number
-  const phone = isUrban ? '919494060060' : '911902'
+  // All complaints go to RMC helpline
+  const phone = '919494060060'
   return {
     message: msg,
     url: `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
-    phone
+    phone,
   }
 }
 
@@ -199,15 +236,19 @@ APPCB Toll-free: 18004252738`
  * Generate shareable text for a report
  */
 export function generateShareText(report, jurisdiction) {
-  return `🚨 Garbage spotted in ${jurisdiction.area}, Rajamahendravaram!
+  const zone = jurisdiction?.specialZone
+  const location = zone
+    ? zone.zone.name
+    : `${jurisdiction?.area || 'Unknown Area'}, Rajamahendravaram`
+
+  return `🚨 Garbage spotted at ${location}!
 
 📍 ${report.landmark}
 ⚠️ Severity: ${report.severity}
 🗑️ Type: ${report.waste_type}
 📸 See it: https://www.google.com/maps?q=${report.lat},${report.lng}
 
-${jurisdiction.official.role} is responsible.
-Track it on GodavariMatters 👉 godavari-matters.vercel.app`
+Report & track on GodavariMatters 👉 godavari-matters.vercel.app`
 }
 
 /**

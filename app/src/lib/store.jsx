@@ -15,7 +15,6 @@ const initialState = {
   reports: [],
   boundaries: null,
   governance: null,
-  sachivalayamOfficials: null,
   loading: true,
   isMobile: detectMobile(),
   splashDismissed: false,
@@ -36,7 +35,7 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_DATA':
-      return { ...state, boundaries: action.boundaries, governance: action.governance, sachivalayamOfficials: action.sachivalayamOfficials }
+      return { ...state, boundaries: action.boundaries, governance: action.governance }
     case 'SET_REPORTS':
       return { ...state, reports: action.reports, loading: false }
     case 'ADD_REPORT':
@@ -86,24 +85,13 @@ export function AppProvider({ children }) {
     async function init() {
       try {
         const { boundaries, governance } = await loadData()
-        // Load sachivalayam officials
-        let sachivalayamOfficials = null
-        try {
-          const offRes = await fetch('/sachivalayam_officials.json')
-          const offData = await offRes.json()
-          sachivalayamOfficials = offData.sachivalayams || []
-        } catch (e) {
-          console.warn('Could not load sachivalayam officials:', e)
-        }
-        dispatch({ type: 'SET_DATA', boundaries, governance, sachivalayamOfficials })
+        dispatch({ type: 'SET_DATA', boundaries, governance })
         let reports = await getReports()
+
         if (reports.length === 0) {
           reports = MOCK_REPORTS.map(r => {
             const jur = detectJurisdiction(r.lat, r.lng)
-            if (jur) {
-              return { ...r, assigned_area: jur.area, area_type: jur.type, area_code: jur.code }
-            }
-            return r
+            return jur ? { ...r, assigned_area: jur.area, area_code: jur.code } : r
           })
         }
         
@@ -166,7 +154,7 @@ export function AppProvider({ children }) {
     submitReport: async (reportData, imageFile) => {
       const { url } = await uploadImage(imageFile)
       const jurisdiction = detectJurisdiction(reportData.lat, reportData.lng)
-      if (!jurisdiction) throw new Error('This location is outside our operational boundary. Please report issues only within Rajamahendravaram (Urban & Rural).')
+      if (!jurisdiction) throw new Error('This location is outside the GRMC operational boundary.')
 
       const report = {
         lat: reportData.lat, lng: reportData.lng,
@@ -174,9 +162,8 @@ export function AppProvider({ children }) {
         severity: reportData.severity,
         waste_type: reportData.waste_type,
         image_url: url,
-        assigned_area: jurisdiction?.area || 'Unknown',
-        area_type: jurisdiction?.type || 'unknown',
-        area_code: jurisdiction?.code || '',
+        assigned_area: jurisdiction.area,
+        area_code: jurisdiction.code || '',
         status: 'unresolved',
         seen_count: 0,
       }

@@ -26,7 +26,7 @@ function WardRow({ area, reports, onReportClick }) {
         <div className="ward-count-badge">{reports.length}</div>
         <div className="ward-info">
           <div className="ward-name">{displayName(area.name)}</div>
-          <div className="ward-detail">{unresolved} unresolved · {area.type === 'urban' ? 'Sachivalayam' : 'Village'}</div>
+          <div className="ward-detail">{unresolved} unresolved · Sachivalayam</div>
         </div>
         <svg 
           width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -66,7 +66,7 @@ export default function ListView() {
     const map = {}
     filteredReports.forEach(r => {
       const area = r.assigned_area || 'Unknown'
-      if (!map[area]) map[area] = { name: area, type: r.area_type || 'urban', reports: [] }
+      if (!map[area]) map[area] = { name: area, reports: [] }
       map[area].reports.push(r)
     })
     return Object.values(map).sort((a, b) => b.reports.length - a.reports.length)

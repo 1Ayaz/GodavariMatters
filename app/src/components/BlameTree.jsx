@@ -1,177 +1,420 @@
-import { useMemo, useState } from 'react'
 import { useApp } from '../lib/store'
-import { t } from '../lib/i18n'
 import { displayName } from '../lib/names'
-import { useDragDismiss } from '../lib/useDragDismiss'
 import { POLITICIAN_PHOTOS } from '../lib/utils'
 
-// ── Constants ──
-const RMC_HELPLINE = '9494060060'
-const RMC_HELPLINE_DISPLAY = '9494-060-060'
-const COMMISSIONER_EMAIL = 'mc.rjy@aptransco.in'
-const PGRS_URL = 'https://pgrs.ap.gov.in/'
-const MEEKOSAM_URL = 'https://meekosam.ap.gov.in'
-const RURAL_HELPLINE = '1902'
-const RMC_LOGO = 'https://upload.wikimedia.org/wikipedia/en/2/2f/Rajahmundry_Municipal_Corporation_Logo.png'
+/**
+ * BlameTree — NammaKasa-exact layout mapped to RJY/GRMC
+ *
+ * Structure (mirrors nammakasa.in exactly):
+ *
+ *        ┌──────────────────┐
+ *        │  Your Ward       │   ← red rounded pill, centered
+ *        │  Area Name       │
+ *        └──────────────────┘
+ *                 │
+ *        ╭────────┴────────╮
+ *        │                 │
+ *    [GRMC logo]      [Corporator]   ← fork: left = authority, right = political (vacant)
+ *    Municipal Auth   Vacant · Special Officer Rule
+ *        │
+ *    [MHO]              ← Municipal Health Officer · City SWM Head
+ *        │
+ *    [SS]               ← Sanitary Supervisor · Zonal Level
+ *        │
+ *    [WSES]             ← Ward Sanitation & Environment Secretary · First contact
+ *
+ *   ─── ELECTED REPRESENTATIVES FOR THIS WARD ───
+ *   [MLA photo]   [MP photo]
+ *
+ * Special zones swap the chain:
+ *   park  → AD Horticulture → Park Staff
+ *   ghat  → MHO → Private Agency
+ */
 
+const RMC_LOGO = '/rmc-logo.svg'
 
-// ── Tree node ──
-function TreeNode({ initials, colorClass, title, name, subtitle, onClick, img }) {
+// ── Rounded-square avatar ──────────────────────────────────────────────────────
+function Avatar({ initials, img, bg = '#dbeafe', color = '#3b82f6', size = 52, faded = false }) {
   return (
-    <button onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', width: '100%', padding: 0 }}>
-      <div style={{ width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, margin: '0 auto 8px', background: img ? 'none' : '#bfdbfe', color: '#2563eb' }} className={colorClass}>
-        {img ? <img src={img} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 16 }} /> : <span>{initials}</span>}
+    <div style={{
+      width: size, height: size, borderRadius: 16,
+      background: img ? '#fff' : bg,
+      border: '1.5px solid #e5e7eb',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.max(11, size * 0.26), fontWeight: 800, color,
+      overflow: 'hidden', flexShrink: 0, margin: '0 auto',
+      opacity: faded ? 0.45 : 1,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    }}>
+      {img
+        ? <img src={img} alt={initials}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 6 }}
+            onError={e => { e.target.style.display = 'none' }} />
+        : <span>{initials}</span>
+      }
+    </div>
+  )
+}
+
+// ── Clickable chain node (icon + label) ───────────────────────────────────────
+function Node({ initials, img, bg, color, title, sub, onClick, size = 52, faded = false }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+        background: 'none', border: 'none',
+        cursor: onClick ? 'pointer' : 'default', padding: 0,
+        width: '100%',
+      }}
+    >
+      <Avatar initials={initials} img={img} bg={bg} color={color} size={size} faded={faded} />
+      <div style={{ textAlign: 'center', lineHeight: 1.3 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: faded ? '#9ca3af' : '#1f2937' }}>
+          {title}
+        </div>
+        {sub && (
+          <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500, marginTop: 1 }}>
+            {sub}
+          </div>
+        )}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, marginBottom: 2 }}>{name || title}</div>
-      <div style={{ fontSize: 10, color: '#6b7280', fontWeight: 600 }}>{subtitle || title}</div>
     </button>
   )
 }
 
-export default function BlameTree({ jurisdiction, sachivalayamOfficials, onPoliticianClick }) {
-  const { state, actions } = useApp()
-  const lang = state.lang || 'en'
-  const areaCode = jurisdiction?.code
-  const isUrban = jurisdiction?.type === 'urban' || jurisdiction?.type === 'urban_sachivalayam' || jurisdiction?.isUrban === true
-  const area = jurisdiction?.area || jurisdiction?.name || 'Unknown'
+// ── Vertical connector line ────────────────────────────────────────────────────
+function VLine({ h = 26 }) {
+  return <div style={{ width: 1.5, height: h, margin: '0 auto', background: '#d1d5db' }} />
+}
 
-  const officials = useMemo(() => {
-    if (!sachivalayamOfficials || !areaCode) return null
-    return sachivalayamOfficials.find(s => s.code === areaCode || `2${s.code}` === areaCode || s.code === `2${areaCode}`)
-  }, [sachivalayamOfficials, areaCode])
+// ── SVG fork (ward pill → authority + corporator) ──────────────────────────────
+function Fork() {
+  return (
+    <svg
+      width="100%" height="52" viewBox="0 0 220 52"
+      preserveAspectRatio="none"
+      style={{ display: 'block', overflow: 'visible' }}
+    >
+      {/* Stem down from pill */}
+      <line x1="110" y1="0" x2="110" y2="18" stroke="#d1d5db" strokeWidth="1.5" />
+      {/* Curve left → authority */}
+      <path d="M110 18 C110 42 55 42 55 52" fill="none" stroke="#c4b5fd" strokeWidth="1.5" />
+      {/* Curve right → corporator */}
+      <path d="M110 18 C110 42 165 42 165 52" fill="none" stroke="#c4b5fd" strokeWidth="1.5" />
+    </svg>
+  )
+}
 
-  const wsanesName = officials?.officials?.ward_sanitation_secretary?.name || officials?.officials?.ward_health_secretary?.name || 'Ward Sanitation Secretary'
-  const wasName = officials?.officials?.ward_admin_secretary?.name || 'Ward Admin Secretary'
+// ── Chain definitions per zone type ───────────────────────────────────────────
+function getChain(zoneType) {
+  if (zoneType === 'park') {
+    return [
+      {
+        key: 'adh', initials: 'ADH',
+        bg: '#dcfce7', color: '#16a34a',
+        title: 'AD Horticulture',
+        sub: 'Parks Dept · GRMC',
+        role: 'Assistant Director of Horticulture',
+        desc: 'Anitha · Parks Department · GRMC · 8688401560',
+      },
+      {
+        key: 'staff', initials: '🌳',
+        bg: '#f0fdf4', color: '#16a34a',
+        title: 'Park Staff',
+        sub: 'On-ground maintenance',
+        role: 'Park Maintenance Staff',
+        desc: 'On-ground maintenance · Horticulture Dept',
+      },
+    ]
+  }
 
-  const openContact = (person) => actions.selectOfficial({ ...person, area: displayName(area) })
+  if (zoneType === 'ghat') {
+    return [
+      {
+        key: 'mho', initials: 'MHO',
+        bg: '#ccfbf1', color: '#0d9488',
+        title: 'Municipal Health Officer',
+        sub: 'City SWM Head · GRMC',
+        role: 'Municipal Health Officer (MHO)',
+        desc: 'Dr. A. Vinuthna · Supervises private ghat contracts · GRMC Health Wing',
+      },
+      {
+        key: 'agency', initials: '🚿',
+        bg: '#ccfbf1', color: '#0d9488',
+        title: 'Private Agency',
+        sub: 'Contract cleaning crew',
+        role: 'Private Cleaning Agency',
+        desc: 'Contract crew · Riverfront maintenance · 16 priority ghats',
+      },
+    ]
+  }
+
+  // Default: Urban ward — mirrors NammaKasa SC → ZC → JHI chain
+  return [
+    {
+      key: 'mho', initials: 'MHO',
+      bg: '#dbeafe', color: '#3b82f6',
+      title: 'Municipal Health Officer',
+      sub: 'City SWM Head · GRMC HQ',
+      role: 'Municipal Health Officer (MHO)',
+      desc: 'Dr. A. Vinuthna · City-wide Sanitation Head · GRMC · 9849908348',
+    },
+    {
+      key: 'ss', initials: 'SS',
+      bg: '#dbeafe', color: '#3b82f6',
+      title: 'Sanitary Supervisor',
+      sub: 'Zonal level · Block of wards',
+      role: 'Sanitary Supervisor',
+      desc: 'Zonal sanitation oversight · Reports to MHO · Block of wards',
+    },
+    {
+      key: 'wses', initials: 'WSES',
+      bg: '#dbeafe', color: '#3b82f6',
+      title: 'WSES',
+      sub: 'Ward Sanitation & Environment Sec.',
+      role: 'Ward Sanitation & Environment Secretary (WSES)',
+      desc: "Your sachivalayam's first point of contact for garbage",
+    },
+  ]
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+export default function BlameTree({ jurisdiction, onPoliticianClick }) {
+  const { actions } = useApp()
+
+  const area     = displayName(jurisdiction?.area || jurisdiction?.name || 'Unknown Area')
+  const zoneType = jurisdiction?.specialZone?.zoneType || 'urban'
+  const chain    = getChain(zoneType)
+
+  const openContact = (role, desc) =>
+    actions.selectOfficial({ roleLabel: role, sub: desc, area })
+
+  // Zone badge
+  const zoneBadge =
+    zoneType === 'park'  ? { label: '🌳 Public Park',   bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' }
+    : zoneType === 'ghat'? { label: '🏞️ Riverfront',    bg: '#f0fdfa', color: '#0d9488', border: '#99f6e4' }
+    : null
 
   return (
     <>
-      <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, background: 'white', padding: '24px 16px', marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <h3 style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 20 }}>{t('accountability', lang)}</h3>
+      {/* ══════════ ACCOUNTABILITY CARD ══════════ */}
+      <div style={{
+        border: '1px solid #e5e7eb', borderRadius: 16, background: '#fff',
+        padding: '16px 12px 14px', marginBottom: 20,
+      }}>
 
-        {/* Your Ward */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 0, position: 'relative', zIndex: 2 }}>
-          <div style={{ border: '1.5px solid #fca5a5', borderRadius: 16, padding: '8px 24px', background: '#fff1f2', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <div style={{ fontSize: 10, color: '#ef4444', fontWeight: 700, marginBottom: 2 }}>{isUrban ? 'Your Ward' : 'Your Village'}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#991b1b' }}>{displayName(area)}</div>
-          </div>
-        </div>
-
-        {isUrban ? (
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
-            <div style={{ width: 120 }}>
-              <TreeNode
-                initials="RMC" img={RMC_LOGO}
-                title="Municipal Corporation" name="RMC HQ"
-                subtitle="City Administration"
-                onClick={() => openContact({ roleLabel: 'Municipal Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
-              />
-            </div>
-
-            {/* Curved split lines SVG */}
-            <div style={{ position: 'relative', width: '100%', height: 40, marginTop: -12, marginBottom: 10, pointerEvents: 'none' }}>
-              <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
-                <path d="M100 0 Q100 30 50 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
-                <path d="M100 0 Q100 30 150 40" fill="none" stroke="#c4b5fd" strokeWidth="2.5" />
-              </svg>
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'flex-start', width: '100%' }}>
-              {/* Left: Executive Wing */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <TreeNode
-                  initials="MC"
-                  title="Special Commissioner" name="Rahul Meena, IAS"
-                  subtitle="RMC HQ · City-wide SWM Head"
-                  onClick={() => openContact({ roleLabel: 'Special Commissioner', name: 'Rahul Meena, IAS', sub: 'RMC HQ · Final authority for city sanitation', isCommissioner: true, showRmcLogo: true })}
-                />
-                <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
-                <TreeNode
-                  initials="ZC"
-                  title="Zonal Commissioner" name="IAS Officer"
-                  subtitle="Your Zone"
-                  onClick={() => openContact({ roleLabel: 'Zonal Commissioner', name: 'IAS Officer', sub: `${displayName(area)} · Zonal Head`, showPrivacy: true })}
-                />
-                <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
-                <TreeNode
-                  initials="WEES"
-                  title="JHI & AEE" name={wsanesName}
-                  subtitle="Ward SWM staff · Monitors collection"
-                  onClick={() => openContact({ roleLabel: 'Ward Environment & Sanitation Secretary (WEES)', name: wsanesName, sub: `${displayName(area)} Sachivalayam · Your ward's garbage person`, showPrivacy: true })}
-                />
-              </div>
-
-              {/* Right: Political Wing */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button onClick={() => alert('Ward Corporator positions are currently vacant.')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', width: '100%', padding: 0, opacity: 0.7 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px', border: '1.5px solid #fde68a', background: '#fffbeb', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#9ca3af', lineHeight: 1.2, marginBottom: 2 }}>Corporator</div>
-                  <div style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700 }}>Vacant since 2021</div>
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '0 0 8px' }} />
-              <TreeNode
-                initials="EA"
-                title={t('ea', lang)} name={t('ea', lang)}
-                subtitle="Village sanitation & waste management"
-                onClick={() => openContact({ roleLabel: t('ea', lang), name: t('ea', lang), sub: `${displayName(area)} · Sanitation + infrastructure`, isRural: true, showPrivacy: true })}
-              />
-              <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
-              <TreeNode
-                initials="PS"
-                title={t('ps', lang)} name={`${t('ps', lang)} (Gr-V)`}
-                subtitle="Head of Grama Sachivalayam"
-                onClick={() => openContact({ roleLabel: t('ps', lang), name: t('ps', lang), sub: displayName(area), isRural: true, showPrivacy: true })}
-              />
-              <div style={{ width: 1.5, height: 24, background: '#d1d5db', margin: '8px 0' }} />
-              <TreeNode
-                initials="SR" colorClass="bg-green-100 text-green-700"
-                title="Sarpanch" name="Elected Village Head"
-                subtitle="Political accountability for village cleanliness"
-                onClick={() => openContact({ roleLabel: 'Sarpanch', name: 'Elected Village Head', sub: displayName(area), isRural: true })}
-              />
-            </div>
+        {/* Header row — label + optional zone badge */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', marginBottom: 16,
+        }}>
+          <span style={{
+            fontSize: 10, fontWeight: 800, letterSpacing: 1.2,
+            color: '#9ca3af', textTransform: 'uppercase',
+          }}>
+            Accountability
+          </span>
+          {zoneBadge && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
+              background: zoneBadge.bg, border: `1px solid ${zoneBadge.border}`,
+              color: zoneBadge.color,
+            }}>
+              {zoneBadge.label}
+            </span>
           )}
         </div>
 
-      {/* ── Elected Representatives ── */}
-      <div className="bt-separator" />
-      <h3 className="elected-section-title">ELECTED REPRESENTATIVES FOR THIS WARD</h3>
-      <div className="elected-row">
-        {jurisdiction?.mla && (
-          <div className="elected-card" onClick={() => onPoliticianClick?.({ ...jurisdiction.mla, type: 'MLA' })}>
-            <div className="elected-avatar">
-              <img src={POLITICIAN_PHOTOS[jurisdiction.mla.name] || ''} alt={jurisdiction.mla.name}
-                onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fef3cd;font-size:16px;font-weight:700">MLA</div>' }} />
+        {/* ── Ward pill ── */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div style={{
+            background: '#fff1f2',
+            border: '2px solid #fca5a5',
+            borderRadius: 20, padding: '8px 28px',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(239,68,68,0.10)',
+          }}>
+            <div style={{
+              fontSize: 10, color: '#ef4444', fontWeight: 700,
+              marginBottom: 2, letterSpacing: 0.4,
+            }}>
+              Your Ward
             </div>
-            <div className="elected-name">{jurisdiction.mla.name}</div>
-            <div className="elected-meta">
-              <span className={`party-tag ${jurisdiction.mla.party?.toLowerCase()}`}>{jurisdiction.mla.party}</span> · MLA
-            </div>
-          </div>
-        )}
-        {jurisdiction?.mp && (
-          <div className="elected-card" onClick={() => onPoliticianClick?.({ ...jurisdiction.mp, type: 'MP' })}>
-            <div className="elected-avatar">
-              <img src={POLITICIAN_PHOTOS[jurisdiction.mp.name] || ''} alt={jurisdiction.mp.name}
-                onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fed7aa;font-size:16px;font-weight:700">MP</div>' }} />
-            </div>
-            <div className="elected-name">{jurisdiction.mp.name}</div>
-            <div className="elected-meta">
-              <span className={`party-tag ${jurisdiction.mp.party?.toLowerCase()}`}>{jurisdiction.mp.party}</span> · MP
+            <div style={{
+              fontSize: 17, fontWeight: 800, color: '#991b1b', lineHeight: 1.2,
+            }}>
+              {area}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* ── Fork SVG — endpoints match the two flex:1 columns below ──
+             SVG viewBox 220px wide: stem at x=110 (50%), left ends at x=55 (25%), right at x=165 (75%)
+             With two flex:1 columns: left center = 25%, right center = 75% → perfect alignment ── */}
+        <Fork />
+
+        {/* ── Row 1: Fork nodes — two EQUAL columns so SVG endpoints land on node centers ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+
+          {/* LEFT (flex:1 = 50% → center at 25%) — GRMC */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Node
+              initials="RMC" img={RMC_LOGO}
+              title="GRMC"
+              sub="Municipal Authority"
+              onClick={() => openContact(
+                'GRMC — Municipal Authority',
+                'Greater Rajamahendravaram Municipal Corporation · Helpline: 94940-60060'
+              )}
+              size={52}
+            />
+          </div>
+
+          {/* RIGHT (flex:1 = 50% → center at 75%) — Corporator */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Node
+              initials="⚠️"
+              bg="#fffbeb" color="#d97706"
+              title="Corporator"
+              faded
+              size={52}
+            />
+            <div style={{
+              marginTop: 6, fontSize: 9, fontWeight: 800, color: '#d97706',
+              background: '#fffbeb', border: '1px solid #fde68a',
+              borderRadius: 20, padding: '2px 9px', textAlign: 'center',
+              lineHeight: 1.4,
+            }}>
+              Vacant · Special Officer Rule
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── Row 2: Vertical chain — left half only (under GRMC), right half is spacer ── */}
+        <div style={{ display: 'flex' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: 10 }}>
+            {chain.map(node => (
+              <div
+                key={node.key}
+                style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+              >
+                <VLine h={24} />
+                <Node
+                  initials={node.initials} img={node.img}
+                  bg={node.bg} color={node.color}
+                  title={node.title} sub={node.sub}
+                  onClick={() => openContact(node.role, node.desc)}
+                  size={48}
+                />
+              </div>
+            ))}
+          </div>
+          {/* Spacer — keeps right half empty so chain stays left-aligned */}
+          <div style={{ flex: 1 }} />
+        </div>
+
       </div>
-      <p className="bt-note">Tap any card for contact options · Corporator elections expected mid-2026</p>
+
+      {/* ══════════ ELECTED REPRESENTATIVES ══════════ */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
+      }}>
+        <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+        <span style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: 1, color: '#9ca3af',
+          textTransform: 'uppercase', whiteSpace: 'nowrap',
+        }}>
+          Elected Representatives for this Ward
+        </span>
+        <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+
+        {/* MLA */}
+        {jurisdiction?.mla && (
+          <button
+            onClick={() => onPoliticianClick?.({ ...jurisdiction.mla, type: 'MLA' })}
+            style={{
+              flex: 1, maxWidth: 150, textAlign: 'center',
+              background: 'none', border: 'none', cursor: 'pointer',
+              borderRadius: 12, padding: '8px 4px',
+            }}
+          >
+            <div style={{
+              width: 60, height: 60, borderRadius: '50%',
+              margin: '0 auto 8px', overflow: 'hidden',
+              border: '2.5px solid #e5e7eb', background: '#f3f4f6',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}>
+              {POLITICIAN_PHOTOS[jurisdiction.mla.name]
+                ? <img src={POLITICIAN_PHOTOS[jurisdiction.mla.name]} alt={jurisdiction.mla.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={e => { e.target.style.display = 'none' }} />
+                : <div style={{
+                    width: '100%', height: '100%', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, color: '#d97706', fontSize: 14,
+                  }}>MLA</div>
+              }
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, marginBottom: 3 }}>
+              {jurisdiction.mla.name}
+            </div>
+            <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>
+              <span style={{ fontWeight: 800, color: '#f59e0b' }}>{jurisdiction.mla.party}</span>
+              {' · MLA'}
+            </div>
+          </button>
+        )}
+
+        {/* MP */}
+        {jurisdiction?.mp && (
+          <button
+            onClick={() => onPoliticianClick?.({ ...jurisdiction.mp, type: 'MP' })}
+            style={{
+              flex: 1, maxWidth: 150, textAlign: 'center',
+              background: 'none', border: 'none', cursor: 'pointer',
+              borderRadius: 12, padding: '8px 4px',
+            }}
+          >
+            <div style={{
+              width: 60, height: 60, borderRadius: '50%',
+              margin: '0 auto 8px', overflow: 'hidden',
+              border: '2.5px solid #e5e7eb', background: '#f3f4f6',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}>
+              {POLITICIAN_PHOTOS[jurisdiction.mp.name]
+                ? <img src={POLITICIAN_PHOTOS[jurisdiction.mp.name]} alt={jurisdiction.mp.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={e => { e.target.style.display = 'none' }} />
+                : <div style={{
+                    width: '100%', height: '100%', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, color: '#ea580c', fontSize: 14,
+                  }}>MP</div>
+              }
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2, marginBottom: 3 }}>
+              {jurisdiction.mp.name}
+            </div>
+            <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>
+              <span style={{ fontWeight: 800, color: '#f97316' }}>{jurisdiction.mp.party}</span>
+              {' · MP'}
+            </div>
+          </button>
+        )}
+
+      </div>
+
+      <p style={{
+        textAlign: 'center', fontSize: 10, color: '#9ca3af',
+        marginTop: 12, fontWeight: 500,
+      }}>
+        Tap any card for contact options · Corporator elections expected mid-2026
+      </p>
     </>
   )
 }

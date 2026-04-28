@@ -1,27 +1,31 @@
-import { useMemo, useRef, useCallback } from 'react'
+import { useMemo } from 'react'
+import BottomSheet from './BottomSheet'
 import { useApp } from '../lib/store'
-import { t } from '../lib/i18n'
 import { displayName } from '../lib/names'
 
+/**
+ * StatsPanel — City-wide statistics sheet.
+ * Uses the shared BottomSheet component (no custom drag/peek logic).
+ * Triggered by the stats button in BottomBar via actions.toggleStats().
+ */
 export default function StatsPanel() {
   const { state, actions } = useApp()
-  const lang = state.lang || 'en'
-  const startY = useRef(0)
-  const isDragging = useRef(false)
 
   const stats = useMemo(() => {
     const all = state.reports
     const unresolved = all.filter(r => r.status !== 'resolved').length
-    const resolved = all.filter(r => r.status === 'resolved').length
+    const resolved   = all.filter(r => r.status === 'resolved').length
     const rate = all.length > 0 ? ((resolved / all.length) * 100).toFixed(1) : '0'
-    const urbanCount = all.filter(r => r.area_type === 'urban').length
-    const ruralCount = all.filter(r => r.area_type !== 'urban').length
 
-    // Group by area for leaderboard
     const areaMap = {}
     all.forEach(r => {
       const area = r.assigned_area || 'Unknown'
-      if (!areaMap[area]) areaMap[area] = { name: area, displayName: displayName(area), type: r.area_type, total: 0, unresolved: 0 }
+      if (!areaMap[area]) areaMap[area] = {
+        name: area,
+        displayName: displayName(area),
+        total: 0,
+        unresolved: 0,
+      }
       areaMap[area].total++
       if (r.status !== 'resolved') areaMap[area].unresolved++
     })
@@ -30,62 +34,58 @@ export default function StatsPanel() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 15)
 
-    const maxCount = leaderboard[0]?.total || 1
-
-    return { unresolved, resolved, rate, leaderboard, maxCount, total: all.length, urbanCount, ruralCount }
+    return {
+      unresolved,
+      resolved,
+      rate,
+      leaderboard,
+      maxCount: leaderboard[0]?.total || 1,
+      total: all.length,
+    }
   }, [state.reports])
 
-  // Swipe-down to close
-  const handleTouchStart = useCallback((e) => {
-    startY.current = e.touches[0].clientY
-    isDragging.current = true
-  }, [])
-
-  const handleTouchEnd = useCallback((e) => {
-    if (!isDragging.current) return
-    isDragging.current = false
-    const endY = e.changedTouches[0].clientY
-    const diff = endY - startY.current
-    // Swipe down > 80px = close
-    if (diff > 80) actions.toggleStats()
-  }, [actions])
-
-  // Don't render at all when hidden — completely gone from DOM
-  if (!state.showStats || state.activeView !== 'map') return null
+  if (state.activeView !== 'map') return null
 
   return (
-    <>
-      {/* Backdrop overlay — click to close */}
-      <div className="stats-backdrop" onClick={() => actions.toggleStats()} />
-
-      <div className="stats-panel visible">
-        {/* Drag handle */}
-        <div 
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          style={{ padding: '16px 0', margin: '-16px 0 0', display: 'flex', justifyContent: 'center', touchAction: 'none' }}
-        >
-          <div className="drag-handle" onClick={() => actions.toggleStats()} style={{ margin: 0 }} />
+    <BottomSheet
+      isOpen={state.showStats}
+      onClose={actions.toggleStats}
+      className="stats-sheet"
+    >
+      {/* ── Header ── */}
+      <div className="sheet-header">
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>City Statistics</h2>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0', fontWeight: 500 }}>
+            Greater Rajamahendravaram Municipal Corporation
+          </p>
         </div>
+        <button className="close-btn" onClick={actions.toggleStats}>×</button>
+      </div>
 
-        {/* Stat cards — NammaKasa style: full-width, big numbers */}
+      {/* ── Body ── */}
+      <div className="sheet-body">
+
+        {/* Stat cards */}
         <div className="stats-cards">
           <div className="stat-card unresolved-card">
             <span className="stat-number">{stats.unresolved.toLocaleString()}</span>
-            <span className="stat-label">{t('unresolved', lang)}</span>
+            <span className="stat-label">Unresolved</span>
           </div>
           <div className="stat-card resolved-card">
             <span className="stat-number">{stats.resolved.toLocaleString()}</span>
-            <span className="stat-label">{t('resolved', lang)}</span>
+            <span className="stat-label">Resolved</span>
           </div>
           <div className="stat-card rate-card">
             <span className="stat-number">{stats.rate}<small>%</small></span>
-            <span className="stat-label">{t('fixed_rate', lang)}</span>
+            <span className="stat-label">Fixed Rate</span>
           </div>
         </div>
 
-        {/* Worst Wards leaderboard */}
-        <h3 className="section-title">{t('worst_wards', lang)}</h3>
+        {/* Leaderboard */}
+        <h3 className="section-title" style={{ marginTop: 20, marginBottom: 12 }}>
+          Worst Wards by Reports
+        </h3>
 
         <div className="lb-list">
           {stats.leaderboard.map((item, i) => (
@@ -94,9 +94,12 @@ export default function StatsPanel() {
               <div className="lb-info">
                 <div className="lb-name">{item.displayName}</div>
                 <div className="lb-ward">
-                  {item.unresolved} {t('unresolved', lang).toLowerCase()} · {item.type === 'urban' ? t('sachivalayam', lang) : t('rural', lang)}
+                  {item.unresolved} unresolved · GRMC Sachivalayam
                 </div>
-                <div className="lb-bar" style={{ width: `${(item.total / stats.maxCount) * 100}%` }} />
+                <div
+                  className="lb-bar"
+                  style={{ width: `${(item.total / stats.maxCount) * 100}%` }}
+                />
               </div>
               <span className="lb-count">{item.total}</span>
             </div>
@@ -104,11 +107,12 @@ export default function StatsPanel() {
 
           {stats.leaderboard.length === 0 && (
             <div className="lb-empty">
-              <p>{t('no_reports_yet', lang)}</p>
+              <p>No reports yet — be the first to report!</p>
             </div>
           )}
         </div>
+
       </div>
-    </>
+    </BottomSheet>
   )
 }

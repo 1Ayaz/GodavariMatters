@@ -4,7 +4,7 @@ import { useApp } from '../lib/store'
 import { detectJurisdiction, generateWhatsAppPayload, generateShareText } from '../lib/jurisdiction'
 import BlameTree from './BlameTree'
 import { t } from '../lib/i18n'
-import { displayName, normalizeKey } from '../lib/names'
+import { displayName } from '../lib/names'
 import { useTranslate } from '../lib/useTranslate'
 
 export default function DetailSheet() {
@@ -16,9 +16,17 @@ export default function DetailSheet() {
 
   const jurisdiction = useMemo(() => {
     if (report) return detectJurisdiction(report.lat, report.lng)
-    if (selectedWard) return selectedWard
+    if (selectedWard) {
+      // Find any report in this ward to get coordinates for full jurisdiction detection
+      const wardReport = state.reports.find(
+        r => (r.assigned_area || '').toUpperCase().includes(selectedWard.name?.toUpperCase?.() || '')
+      )
+      if (wardReport) return detectJurisdiction(wardReport.lat, wardReport.lng)
+      // Fallback: return ward as-is (won't have MLA/MP but won't crash)
+      return { area: selectedWard.name, name: selectedWard.name }
+    }
     return null
-  }, [report, selectedWard])
+  }, [report, selectedWard, state.reports])
 
   const translatedLandmark = useTranslate(report?.landmark || '')
   const translatedWasteType = useTranslate(report?.waste_type || '')
@@ -26,9 +34,9 @@ export default function DetailSheet() {
   if (!report && !selectedWard) return null
 
   const isResolved = report?.status === 'resolved'
-  const daysAgo = report ? Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000)) : 0
-  const isUrban = jurisdiction?.type === 'urban' || jurisdiction?.type === 'urban_sachivalayam' || jurisdiction?.isUrban === true
-  const complaintLabel = isUrban ? t('file_complaint', lang) : t('meekosam', lang)
+  const daysAgo = report
+    ? Math.max(1, Math.ceil((Date.now() - new Date(report.created_at).getTime()) / 86400000))
+    : 0
 
   const handleSeen = () => actions.incrementSeen(report.id)
 
@@ -61,7 +69,10 @@ export default function DetailSheet() {
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 13, fontWeight: 500 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              {report ? translatedLandmark : (selectedWard?.isUrban ? t('sachivalayam_urban', lang) : t('gram_panchayat', lang))}
+              {report
+                ? translatedLandmark
+                : 'Sachivalayam · GRMC'
+              }
             </div>
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', color: '#9ca3af', paddingTop: 4 }}>
@@ -118,32 +129,30 @@ export default function DetailSheet() {
               </div>
             </>
           ) : (
-            <div className="ward-reports-list" style={{ marginBottom: 20 }}>
-              <h4 style={{ fontSize: 11, fontWeight: 800, marginBottom: 12, color: '#999', letterSpacing: 1 }}>ACTIVE ISSUES IN THIS AREA</h4>
-              {state.reports.filter(r => {
-                const reportKey = normalizeKey(r.assigned_area || '')
-                const wardKey = normalizeKey(selectedWard?.name || '')
-                return reportKey === wardKey
-              }).slice(0, 5).map(r => (
-                <div key={r.id} onClick={() => actions.selectReport(r)} className="ward-report-item" style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}>
-                  <img src={r.image_url} alt="R" className="skeleton-img" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.waste_type}</div>
-                    <div style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.landmark}</div>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#ccc' }}>→</div>
-                </div>
-              ))}
-              {state.reports.filter(r => normalizeKey(r.assigned_area || '') === normalizeKey(selectedWard?.name || '')).length === 0 && (
-                <p style={{ fontSize: 13, color: '#999', textAlign: 'center', padding: '20px 0' }}>No active reports in this ward.</p>
-              )}
+            // Ward-summary mode: just show a zone context badge
+            // BlameTree below handles the full accountability chain
+            <div style={{ marginBottom: 20 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 14px', borderRadius: 20,
+                background: '#f0f9ff', border: '1px solid #bae6fd',
+                fontSize: 12, fontWeight: 700, color: '#0369a1', marginBottom: 4,
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                GRMC Sachivalayam · Rajamahendravaram
+              </div>
+              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 6, fontWeight: 500 }}>
+                Tap any node below to see contact &amp; escalation options.
+              </p>
             </div>
           )}
 
           {/* BLAME TREE */}
           <BlameTree
             jurisdiction={jurisdiction}
-            sachivalayamOfficials={state.sachivalayamOfficials}
             onPoliticianClick={(leader) => actions.selectLeader(leader)}
           />
 
@@ -156,7 +165,7 @@ export default function DetailSheet() {
               {!isResolved && (
                 <button onClick={handleComplaint} style={{ width: '100%', background: '#22c55e', color: 'white', padding: '16px', borderRadius: 14, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(34,197,94,0.3)' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-                  {isUrban ? 'File RMC Complaint' : 'File Gram Panchayat Complaint'}
+                  File RMC Complaint
                 </button>
               )}
 

@@ -1,7 +1,15 @@
 {
-  "last_updated": "2026-04-21",
+  "last_updated": "2026-04-27",
   "platform_scope": "Garbage & waste pollution reporting — streets, rivers, water bodies, open dumping",
-  
+
+  "grmc_merger": {
+    "note": "In January 2020, 21 surrounding villages were de-notified as Panchayats and absorbed into Greater Rajamahendravaram Municipal Corporation (GRMC). All formerly 'rural' areas (Dowleswaram, Bommuru, Katheru, Rajavolu, Hukumpeta, Pidimgoyyi, Satellite City, etc.) now fall under GRMC urban administration. No Sarpanch or Panchayat Secretary roles exist anymore for these areas.",
+    "merged_year": 2020,
+    "old_area_sq_km": 47,
+    "new_area_sq_km": 218,
+    "merged_localities": ["Dowleswaram", "Bommuru", "Katheru", "Rajavolu", "Hukumpeta", "Pidimgoyyi", "Satellite City"]
+  },
+
   "parliamentary_constituency": {
     "name": "Rajahmundry Lok Sabha Constituency",
     "mp": "Daggubati Purandheshwari",
@@ -15,15 +23,45 @@
       "constituency": "Rajahmundry City (#62)"
     },
     "corporation": {
-      "name": "Rajamahendravaram Municipal Corporation (RMC)",
-      "commissioner": "Rahul Meena (subject to transfers)",
-      "mayor": "Vacant",
-      "helpline": "9494-060-060"
+      "name": "Greater Rajamahendravaram Municipal Corporation (GRMC / RMC)",
+      "commissioner": {
+        "name": "Rahul Meena, IAS",
+        "role": "Municipal Commissioner",
+        "mobile": "9866657600",
+        "note": "Dial Your Commissioner: Mondays 10-11 AM"
+      },
+      "mho": {
+        "name": "Dr. A. Vinuthna",
+        "role": "Municipal Health Officer (MHO)",
+        "mobile": "9849908348",
+        "note": "Responsible for ghat/riverfront sanitation contracts and supervision of private cleaning agency"
+      },
+      "horticulture": {
+        "name": "Anitha",
+        "role": "Assistant Director of Horticulture",
+        "mobile": "8688401560",
+        "note": "Responsible for all major public parks"
+      },
+      "add_commissioner": {
+        "name": "P.V. Ramalingeswar",
+        "role": "Additional Commissioner",
+        "mobile": "9866657601",
+        "note": "Public infrastructure"
+      },
+      "mayor": "Vacant (elections delayed)",
+      "helpline": "9494060060",
+      "helpline_display": "94940-60060"
+    },
+    "corporator": {
+      "status": "Vacant",
+      "vacant_since": "2021",
+      "note": "Municipal elections are delayed. Ward Corporator positions are vacant. Special Officer rule is in effect."
     },
     "responsible_official": {
-      "role": "Ward Sanitation & Environment Secretary",
-      "short": "WSanES",
-      "department": "Municipal Administration",
+      "role": "Ward Environment & Sanitation Secretary (WEES)",
+      "short": "WEES",
+      "also_known_as": "Ward Health Secretary (WHS) in AP Sachivalayam records",
+      "department": "Municipal Administration / Sachivalayam",
       "responsibilities": [
         "Garbage collection & door-to-door waste pickup",
         "Street sweeping & public area cleanliness",
@@ -32,26 +70,37 @@
         "Vector control (mosquitoes from stagnant waste)",
         "Dry/wet waste segregation enforcement"
       ],
-      "note": "This is THE person responsible for garbage in each urban sachivalayam. One WSanES per sachivalayam."
+      "note": "One WEES per urban sachivalayam. This is THE first point of accountability for street garbage."
     },
     "supporting_officials": [
       {
-        "role": "Ward Amenities Secretary",
-        "short": "WAmenS",
-        "relevance": "Manages drains & stormwater channels where garbage accumulates"
-      },
-      {
         "role": "Ward Administrative Secretary",
         "short": "WAS",
-        "relevance": "Team leader — escalation point if WSanES doesn't act"
+        "relevance": "Sachivalayam team leader — escalation point if WEES doesn't act"
       }
     ],
+    "special_zone_officials": {
+      "park": {
+        "first_contact": "Park Maintenance Staff",
+        "supervisor": "Assistant Director of Horticulture",
+        "department": "Horticulture Department, GRMC",
+        "escalate_to": "Municipal Commissioner"
+      },
+      "ghat": {
+        "first_contact": "Private Maintenance Agency (contract holder)",
+        "supervisor": "Municipal Health Officer (MHO)",
+        "department": "Health Wing, GRMC",
+        "escalate_to": "Municipal Commissioner",
+        "note": "16 priority ghats under private contract. 48 total ghats — remaining are under regular WEES jurisdiction."
+      }
+    },
     "complaint_channels": {
       "primary": {
         "channel": "RMC Helpline",
-        "number": "9494-060-060",
+        "number": "9494060060",
+        "display": "94940-60060",
         "hours": "9 AM - 6 PM",
-        "for": "Immediate garbage complaints"
+        "for": "Immediate garbage complaints — parks, ghats, streets, all urban areas"
       },
       "app": {
         "channel": "RMC Sevak App / NagaraSeva App",
@@ -70,67 +119,6 @@
     }
   },
 
-  "rural": {
-    "mla": {
-      "name": "Gorantla Butchaiah Chowdary",
-      "party": "TDP",
-      "constituency": "Rajahmundry Rural (#63)"
-    },
-    "administration": {
-      "mandal": "Rajamahendravaram Rural",
-      "mpdo": "MPDO - Rajamahendravaram Rural",
-      "gram_panchayat": "Each village has an elected Sarpanch"
-    },
-    "responsible_official": {
-      "role": "Engineering Assistant",
-      "short": "EA",
-      "department": "Panchayat Raj",
-      "responsibilities": [
-        "Village sanitation & solid waste management",
-        "Drain maintenance & cleaning",
-        "Public area cleanliness",
-        "MGNREGS sanitation works"
-      ],
-      "note": "Rural areas don't have a dedicated Sanitation Secretary like urban areas. The Engineering Assistant handles sanitation + infrastructure combined."
-    },
-    "supporting_officials": [
-      {
-        "role": "Panchayat Secretary (Gr-V)",
-        "short": "PS",
-        "relevance": "Head of grama sachivalayam — escalation point for sanitation complaints"
-      },
-      {
-        "role": "Sarpanch",
-        "relevance": "Elected village head — political accountability for village cleanliness"
-      }
-    ],
-    "complaint_channels": {
-      "primary": {
-        "channel": "Meekosam / Spandana Portal",
-        "url": "https://meekosam.ap.gov.in",
-        "for": "Online grievance filing with tracking"
-      },
-      "phone": {
-        "channel": "Toll-free Helpline",
-        "number": "1902",
-        "for": "Phone-based complaint registration"
-      },
-      "in_person": {
-        "channel": "Grama Sachivalayam Visit",
-        "for": "Walk in and report to Panchayat Secretary or Engineering Assistant"
-      },
-      "escalation": {
-        "channel": "District Collectorate Grievance Day",
-        "schedule": "Mondays",
-        "for": "When village-level officials don't respond"
-      },
-      "whatsapp": {
-        "available": false,
-        "note": "No WhatsApp complaint channel exists for rural areas. This is the gap GodavariMatters fills."
-      }
-    }
-  },
-
   "river_pollution": {
     "note": "Garbage in the Godavari River or other water bodies crosses jurisdictions",
     "relevant_authorities": [
@@ -141,37 +129,31 @@
         "toll_free": "18004252738"
       },
       {
-        "authority": "District Collector - East Godavari",
-        "role": "Overall district administration, can direct any department to act"
-      },
-      {
-        "authority": "Municipal Commissioner (if urban stretch)",
+        "authority": "Municipal Commissioner (urban stretch)",
         "role": "RMC is responsible for urban riverbank cleanliness"
-      },
-      {
-        "authority": "MPDO (if rural stretch)",
-        "role": "Rural mandal administration for rural riverbank areas"
       }
     ],
-    "godavari_context": "The Godavari river flows through both urban RMC area and rural villages (Dowleswaram, Bommuru, Katheru). Garbage dumped in the river is a cross-jurisdictional issue."
+    "godavari_context": "The Godavari river flows through GRMC urban areas. All riverfront ghat cleanliness (16 priority ghats) is managed by a Private Agency under MHO supervision."
   },
 
   "complaint_routing": {
     "garbage_on_street": {
-      "urban": {"contact": "WSanES of that sachivalayam", "escalate": "RMC 9494-060-060"},
-      "rural": {"contact": "Engineering Assistant (EA)", "escalate": "Meekosam / 1902"}
+      "contact": "WSES of that sachivalayam", "escalate": "RMC 94940-60060"
     },
-    "garbage_in_drain": {
-      "urban": {"contact": "WSanES + WAmenS", "escalate": "RMC Sevak App"},
-      "rural": {"contact": "Engineering Assistant (EA)", "escalate": "Panchayat Secretary"}
+    "garbage_in_park": {
+      "contact": "Park Maintenance Staff → AD Horticulture",
+      "escalate": "RMC 94940-60060"
+    },
+    "garbage_at_ghat": {
+      "contact": "Private Maintenance Agency → MHO (Dr. Vinuthna)",
+      "escalate": "RMC 94940-60060"
     },
     "garbage_in_river": {
-      "urban_stretch": {"contact": "RMC + APPCB", "escalate": "District Collector"},
-      "rural_stretch": {"contact": "MPDO + APPCB", "escalate": "District Collector"}
+      "contact": "RMC + APPCB",
+      "escalate": "District Collector"
     },
     "open_dumping": {
-      "urban": {"contact": "WSanES", "escalate": "Ward Planning Secretary (WPRS)"},
-      "rural": {"contact": "Engineering Assistant (EA)", "escalate": "Sarpanch / MPDO"}
+      "urban": { "contact": "WEES", "escalate": "RMC 94940-60060" }
     }
   }
 }
