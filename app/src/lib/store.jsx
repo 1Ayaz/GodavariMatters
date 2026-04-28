@@ -11,6 +11,47 @@ function detectMobile() {
     || window.innerWidth <= 768
 }
 
+// ─── Cloud Vision: validate photo is a real civic/garbage issue ───────────────
+async function validateGarbagePhoto(imageFile) {
+  const toBase64 = (file) => new Promise((res, rej) => {
+    const reader = new FileReader()
+    reader.onload = () => res(reader.result.split(',')[1])
+    reader.onerror = rej
+    reader.readAsDataURL(file)
+  })
+
+  const base64 = await toBase64(imageFile)
+
+  const response = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${import.meta.env.VITE_VISION_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: base64 },
+          features: [{ type: 'LABEL_DETECTION', maxResults: 15 }]
+        }]
+      })
+    }
+  )
+
+  const data = await response.json()
+  const labels = data.responses[0]?.labelAnnotations?.map(l => l.description.toLowerCase()) || []
+
+  const civicKeywords = [
+    'garbage', 'waste', 'litter', 'pollution', 'debris',
+    'trash', 'dump', 'sewage', 'drain', 'filth',
+    'street', 'road', 'construction', 'rubble', 'ghat',
+    'river', 'plastic', 'mud', 'soil', 'sand', 'water',
+    'infrastructure', 'pavement', 'sidewalk', 'pothole'
+  ]
+
+  const matched = labels.some(label => civicKeywords.some(kw => label.includes(kw)))
+  if (!matched) throw new Error('Photo does not show a civic issue. Please photograph the actual problem.')
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const initialState = {
   reports: [],
   boundaries: null,
@@ -94,7 +135,7 @@ export function AppProvider({ children }) {
             return jur ? { ...r, assigned_area: jur.area, area_code: jur.code } : r
           })
         }
-        
+
         dispatch({ type: 'SET_REPORTS', reports })
       } catch (e) {
         console.error('Failed to load data:', e)
@@ -102,7 +143,7 @@ export function AppProvider({ children }) {
       }
     }
     init()
-    
+
     // Real-time listener
     let channel = null
     if (supabase) {
@@ -112,7 +153,6 @@ export function AppProvider({ children }) {
           if (payload.eventType === 'INSERT') dispatch({ type: 'ADD_REPORT', report: payload.new })
           if (payload.eventType === 'UPDATE') dispatch({ type: 'UPDATE_REPORT', report: payload.new })
           if (payload.eventType === 'DELETE') {
-            // Re-fetch all to be safe on delete, or implement DELETE action
             getReports().then(reports => dispatch({ type: 'SET_REPORTS', reports }))
           }
         })
@@ -153,6 +193,11 @@ export function AppProvider({ children }) {
 
     submitReport: async (reportData, imageFile) => {
       const { url } = await uploadImage(imageFile)
+
+      // ── Cloud Vision: reject blank/irrelevant photos ──────────────────────
+      await validateGarbagePhoto(imageFile)
+      // ─────────────────────────────────────────────────────────────────────
+
       const jurisdiction = detectJurisdiction(reportData.lat, reportData.lng)
       if (!jurisdiction) throw new Error('This location is outside the GRMC operational boundary.')
 
