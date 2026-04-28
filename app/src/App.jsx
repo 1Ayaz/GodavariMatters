@@ -14,19 +14,68 @@ import OfficialSheet from './components/OfficialSheet'
 import CleanedSheet from './components/CleanedSheet'
 import StatsPanel from './components/StatsPanel'
 
+// ── Stage 1: Logo + skeleton while data loads ──────────────────────────────
+function LoadingScreen() {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 99999,
+      background: '#fff',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 0,
+    }}>
+      {/* Logo */}
+      <div style={{
+        fontFamily: 'Plus Jakarta Sans, -apple-system, sans-serif',
+        fontSize: 28, fontWeight: 800, letterSpacing: '-0.8px',
+        color: '#1a1a1a', marginBottom: 40,
+        animation: 'logoPulse 1.8s ease-in-out infinite',
+      }}>
+        Godavari<span style={{ color: '#E8390E' }}>!</span>Matters
+      </div>
+
+      {/* Skeleton map placeholder */}
+      <div style={{
+        width: '80%', maxWidth: 320,
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        {[100, 75, 88, 60].map((w, i) => (
+          <div key={i} style={{
+            height: 12, borderRadius: 8,
+            width: `${w}%`,
+            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+            backgroundSize: '200% 100%',
+            animation: `skeletonLoading 1.5s ${i * 0.15}s infinite`,
+          }} />
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes logoPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+        @keyframes skeletonLoading {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ── Main app content ───────────────────────────────────────────────────────
 function AppContent() {
   const { state, actions } = useApp()
 
-  // Keyboard shortcuts — accessibility & power-user feature
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e) => {
-      // Don't fire shortcuts when typing in inputs
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-
       switch (e.key) {
         case 'r': case 'R':
-          // Only allow report shortcut on mobile
-          if (!e.ctrlKey && !e.metaKey && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) actions.showReportForm(true)
+          if (!e.ctrlKey && !e.metaKey && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+            actions.showReportForm(true)
           break
         case 'Escape':
           actions.showReportForm(false)
@@ -46,11 +95,29 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handler)
   }, [actions])
 
+  // Stage 1 — data still loading → show logo skeleton
+  if (state.loading) {
+    return <LoadingScreen />
+  }
+
+  // Stage 2 — data ready, splash not dismissed → map renders behind splash
+  if (!state.splashDismissed) {
+    return (
+      <>
+        {/* Map loads silently behind splash */}
+        <div style={{ visibility: 'visible', position: 'fixed', inset: 0, zIndex: 0 }}>
+          <TopBar />
+          <ViewSwitcher />
+          <MapView />
+        </div>
+        <SplashScreen />
+      </>
+    )
+  }
+
+  // Stage 3 — full app
   return (
     <>
-      {!state.splashDismissed && (
-        <SplashScreen onDismiss={actions.dismissSplash} />
-      )}
       <TopBar />
       <ViewSwitcher />
       <MapView />
@@ -73,4 +140,3 @@ export default function App() {
     </AppProvider>
   )
 }
-

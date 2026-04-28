@@ -1,76 +1,136 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useApp } from '../lib/store'
-import { t } from '../lib/i18n'
 
-export default function SplashScreen({ onDismiss }) {
-  const [visible, setVisible] = useState(true)
-  const [fadeOut, setFadeOut] = useState(false)
-  const { state } = useApp()
-  const lang = state.lang || 'en'
+export default function SplashScreen() {
+  const { actions } = useApp()
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (sessionStorage.getItem('gm_splash_seen')) {
-      setVisible(false)
-      onDismiss?.()
-    }
+    // Slight delay so map starts rendering behind it
+    const t = setTimeout(() => setVisible(true), 100)
+    return () => clearTimeout(t)
   }, [])
 
-  const dismiss = () => {
-    setFadeOut(true)
-    sessionStorage.setItem('gm_splash_seen', '1')
-    setTimeout(() => {
-      setVisible(false)
-      onDismiss?.()
-    }, 500)
+  const handleDismiss = () => {
+    actions.dismissSplash()
   }
 
-  if (!visible) return null
-
   return (
-    <div className={`splash-screen${fadeOut ? ' fade-out' : ''}`} onClick={dismiss}>
-      <div className="splash-content">
-        <div className="splash-logo-container">
-           <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 4px 12px rgba(232,57,14,0.3))', marginBottom: 16 }}>
-             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-             <circle cx="12" cy="10" r="3"></circle>
-           </svg>
+    <div
+      onClick={handleDismiss}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        // No background — map shows through, blurred
+        backdropFilter: 'blur(6px) brightness(0.55)',
+        WebkitBackdropFilter: 'blur(6px) brightness(0.55)',
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.4s ease',
+        cursor: 'pointer',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '32px 28px 24px',
+          maxWidth: '420px',
+          width: '100%',
+          boxShadow: '0 8px 48px rgba(0,0,0,0.18)',
+          cursor: 'default',
+        }}
+      >
+        {/* Logo */}
+        <div style={{
+          fontFamily: 'Georgia, serif',
+          fontSize: '18px',
+          fontWeight: '700',
+          letterSpacing: '-0.3px',
+          marginBottom: '20px',
+          color: '#111',
+        }}>
+          Godavar<span style={{ color: '#e53e2f' }}>!</span>Matters
         </div>
-        <h1 className="splash-title">
-          Clean <span className="splash-highlight">Rajahmundry.</span><br />
-          Together.
+
+        {/* Headline */}
+        <h1 style={{
+          fontFamily: 'Georgia, serif',
+          fontSize: '28px',
+          fontWeight: '700',
+          lineHeight: '1.25',
+          color: '#111',
+          margin: '0 0 14px 0',
+        }}>
+          Rajahmundry has a garbage problem.
         </h1>
-        <p className="splash-desc" style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: '0 auto 32px', maxWidth: 300 }}>
-          Take a photo of garbage in your area. We route it directly to the responsible Sachivalayam officials.
+
+        {/* Subtext */}
+        <p style={{
+          fontSize: '15px',
+          lineHeight: '1.6',
+          color: '#444',
+          margin: '0 0 8px 0',
+        }}>
+          Report it. Photograph it. Name who's responsible.
         </p>
 
-        <div className="splash-features">
-          <div className="splash-feature">
-            <span className="sf-icon">📸</span>
-            <div className="sf-text">
-              <strong>Snap it</strong>
-              <span>Take a clear photo of the issue</span>
-            </div>
-          </div>
-          <div className="splash-feature">
-            <span className="sf-icon">📍</span>
-            <div className="sf-text">
-              <strong>Locate it</strong>
-              <span>GPS automatically finds the ward</span>
-            </div>
-          </div>
-          <div className="splash-feature">
-            <span className="sf-icon">✅</span>
-            <div className="sf-text">
-              <strong>Resolve it</strong>
-              <span>Track progress until it's clean</span>
-            </div>
-          </div>
+        <p style={{
+          fontSize: '14px',
+          lineHeight: '1.6',
+          color: '#666',
+          margin: '0 0 24px 0',
+        }}>
+          Every dump is mapped to the Ward Secretary, Sanitary Supervisor, and Municipal Health Officer.
+          When enough citizens report, it becomes impossible to ignore.
+        </p>
+
+        {/* Stats */}
+        <div style={{
+          borderTop: '1px solid #eee',
+          paddingTop: '16px',
+          marginBottom: '20px',
+          fontSize: '13px',
+          color: '#888',
+          textAlign: 'center',
+          lineHeight: '1.8',
+        }}>
+          5.79 lakh citizens &nbsp;·&nbsp; 52 wards &nbsp;·&nbsp; 21 merged villages &nbsp;·&nbsp; All of Rajahmundry
         </div>
 
-        <div className="splash-cta" style={{ marginTop: '40px' }}>{t('splash_tap', lang)}</div>
-      </div>
-      <div className="splash-brand">
-        <span>Godavar<span className="splash-brand-accent">i</span>Matters</span>
+        {/* CTA */}
+        <button
+          onClick={handleDismiss}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: '#e53e2f',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            letterSpacing: '0.2px',
+          }}
+        >
+          See the map →
+        </button>
+
+        {/* Tap hint */}
+        <p style={{
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#bbb',
+          margin: '12px 0 0 0',
+        }}>
+          Tap anywhere to continue
+        </p>
       </div>
     </div>
   )
