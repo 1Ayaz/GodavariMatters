@@ -6,7 +6,6 @@ import { useApp } from '../lib/store'
 import { loadData } from '../lib/jurisdiction'
 import { displayName, normalizeKey } from '../lib/names'
 
-// Fix Leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -14,31 +13,23 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-// Fallback center — overridden by FitToUrban once city_limits loads
 const RJY_CENTER = [17.014, 81.796]
 const RJY_ZOOM = 13
-
-// Max pan bounds
 const RJY_BOUNDS = L.latLngBounds([16.88, 81.62], [17.12, 81.92])
-
 const ZOOM_THRESHOLD = 15
-
 const SEVERITY_COLORS = {
   minor: '#fbbf24', moderate: '#f97316', severe: '#ef4444', critical: '#dc2626',
 }
 
-// Classify a coordinate into a broad RJY zone label
-// RJY centre ≈ 17.014°N, 81.796°E
 function getZoneLabel(lat, lng) {
   const north = lat > 17.02
-  const east  = lng > 81.81
-  if (north && east)  return 'North-East RJY · GRMC'
+  const east = lng > 81.81
+  if (north && east) return 'North-East RJY · GRMC'
   if (north && !east) return 'North-West RJY · GRMC'
   if (!north && east) return 'South-East RJY · GRMC'
   return 'South-West RJY · GRMC'
 }
 
-// ── Fit map to city_limits polygon on first load ──
 function FitToUrban({ cityLimits }) {
   const map = useMap()
   const fitted = useRef(false)
@@ -53,7 +44,6 @@ function FitToUrban({ cityLimits }) {
   return null
 }
 
-// ── Map zoom/GPS controls ──
 function MapControls() {
   const map = useMap()
   const { actions } = useApp()
@@ -82,15 +72,59 @@ function MapControls() {
   )
 }
 
-// ── Track zoom level ──
 function ZoomTracker({ onZoomChange }) {
   useMapEvents({ zoomend: (e) => onZoomChange(e.target.getZoom()) })
   return null
 }
 
-// ── Clustered report markers ──
 function ReportMarkers({ onReportPreview }) {
   const { filteredReports } = useApp()
+
+  // Group by exact coordinate for jitter + stack sizing
+  const locationGroups = useMemo(() => {
+    const groups = {}
+    filteredReports.forEach((report) => {
+      const key = `${report.lat},${report.lng}`
+      if (!groups[key]) groups[key] = []
+      groups[key].push(report)
+    })
+    return groups
+  }, [filteredReports])
+
+  const markers = useMemo(() => {
+    return filteredReports.map((report) => {
+      const key = `${report.lat},${report.lng}`
+      const stack = locationGroups[key]
+      const stackCount = stack.length
+      const stackIdx = stack.findIndex(r => r.id === report.id)
+
+      const isResolved = report.status === 'resolved'
+      const isPending = report.cleaned_image_url && !isResolved
+      const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
+
+      const dotSize = stackCount === 1 ? 14 : Math.min(26, 14 + stackCount * 2)
+      const half = dotSize / 2
+
+      const JITTER = stackCount > 1 ? 0.00015 + stackCount * 0.00003 : 0
+      const angle = stackIdx * 137.508 * (Math.PI / 180)
+      const jLat = stackIdx > 0 ? report.lat + Math.sin(angle) * JITTER : report.lat
+      const jLng = stackIdx > 0 ? report.lng + Math.cos(angle) * JITTER : report.lng
+
+      const badge = stackIdx === 0 && stackCount > 1
+        ? `<span style="position:absolute;top:-6px;right:-6px;background:#1e293b;color:#fff;font-size:9px;font-weight:700;line-height:1;padding:2px 4px;border-radius:8px;border:1.5px solid #fff;white-space:nowrap">${stackCount}</span>`
+        : ''
+
+      const dotIcon = L.divIcon({
+        className: '',
+        html: `<div style="position:relative;width:${dotSize}px;height:${dotSize}px;background:${color};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25)">${badge}</div>`,
+        iconSize: [dotSize, dotSize],
+        iconAnchor: [half, half],
+      })
+
+      return { report, jLat, jLng, dotIcon, isResolved }
+    })
+  }, [filteredReports, locationGroups])
+
   return (
     <MarkerClusterGroup
       chunkedLoading
@@ -113,48 +147,62 @@ function ReportMarkers({ onReportPreview }) {
         })
       }}
     >
-      {filteredReports.map((report, idx) => {
-        const isResolved = report.status === 'resolved'
-        const isPending = report.cleaned_image_url && !isResolved
-        const color = isResolved ? '#16a34a' : isPending ? '#f59e0b' : (SEVERITY_COLORS[report.severity] || '#f97316')
-
-        // Dot jitter: stable offset for reports sharing the same lat/lng
-        // Count how many earlier reports share the same coords
-        const sameLocCount = filteredReports.slice(0, idx).filter(
-          r => r.lat === report.lat && r.lng === report.lng
-        ).length
-        const JITTER = 0.00009  // ~10m
-        const angle = (sameLocCount * 137.5) * (Math.PI / 180) // golden-angle spread
-        const jLat = sameLocCount > 0 ? report.lat + Math.sin(angle) * JITTER : report.lat
-        const jLng = sameLocCount > 0 ? report.lng + Math.cos(angle) * JITTER : report.lng
-
-        const dotIcon = L.divIcon({
-          className: '',
-          html: `<div style="width:16px;height:16px;background:${color};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.2)"></div>`,
-          iconSize: [16, 16], iconAnchor: [8, 8],
-        })
-        return (
-          <Marker
-            key={report.id}
-            position={[jLat, jLng]}
-            icon={dotIcon}
-            isResolved={isResolved}
-            eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); onReportPreview?.(report) } }}
-          />
-        )
-      })}
+      {markers.map(({ report, jLat, jLng, dotIcon, isResolved }) => (
+        <Marker
+          key={report.id}
+          position={[jLat, jLng]}
+          icon={dotIcon}
+          isResolved={isResolved}
+          eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); onReportPreview?.(report) } }}
+        />
+      ))}
     </MarkerClusterGroup>
   )
 }
 
+// ── Build outside-boundary mask geometry ──
+function buildMaskData(cityLimits) {
+  if (!cityLimits) return null
+  try {
+    // Extract the exterior ring(s) from city_limits to punch a hole in the world bbox
+    let holes = []
+    if (cityLimits.type === 'FeatureCollection') {
+      cityLimits.features.forEach(f => {
+        const g = f.geometry
+        if (g.type === 'Polygon') holes.push(g.coordinates[0])
+        else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => holes.push(p[0]))
+      })
+    } else if (cityLimits.type === 'Feature') {
+      const g = cityLimits.geometry
+      if (g.type === 'Polygon') holes.push(g.coordinates[0])
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach(p => holes.push(p[0]))
+    } else if (cityLimits.type === 'Polygon') {
+      holes.push(cityLimits.coordinates[0])
+    }
+    if (!holes.length) return null
+    return {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]], // world bbox
+          ...holes, // holes = city area cut out
+        ]
+      }
+    }
+  } catch (_) { return null }
+}
+
 // ── Ward boundaries + outer city border ──
-function BoundaryLayers({ onHover, onWardZoom, reportsByArea, cityLimits }) {
+function BoundaryLayers({ onHover, onWardZoom, reportsByArea, cityLimits, zoom }) {
   const [geojson, setGeojson] = useState(null)
   const hoveredRef = useRef(null)
 
   useEffect(() => {
     loadData().then(({ boundaries }) => setGeojson(boundaries))
   }, [])
+
+  const maskData = useMemo(() => buildMaskData(cityLimits), [cityLimits])
 
   const wardStyle = useCallback((feature) => {
     let name = normalizeKey(feature.properties.name || '')
@@ -173,7 +221,6 @@ function BoundaryLayers({ onHover, onWardZoom, reportsByArea, cityLimits }) {
     }
   }, [reportsByArea])
 
-  // Dotted boundary — light dashed pink, not solid orange (NammaKasa style)
   const cityBorderStyle = {
     color: '#ef4444',
     weight: 2,
@@ -181,18 +228,24 @@ function BoundaryLayers({ onHover, onWardZoom, reportsByArea, cityLimits }) {
     dashArray: '3 7',
     lineCap: 'round',
     lineJoin: 'round',
-    fillColor: '#fef2f2',
-    fillOpacity: 0.08,
+    fillColor: 'transparent',
+    fillOpacity: 0,
+  }
+
+  const maskStyle = {
+    color: 'transparent',
+    weight: 0,
+    fillColor: '#94a3b8',
+    fillOpacity: 0.18,
   }
 
   const onEachWard = useCallback((feature, layer) => {
     const name = feature.properties.name || 'Unknown'
     const matchName = normalizeKey(name)
     const count = reportsByArea?.[matchName]?.total || 0
-    // Compute centroid for zone label
     const bounds = layer.getBounds ? layer.getBounds() : null
     const centreLat = bounds ? (bounds.getNorth() + bounds.getSouth()) / 2 : 17.014
-    const centreLng = bounds ? (bounds.getEast()  + bounds.getWest())  / 2 : 81.796
+    const centreLng = bounds ? (bounds.getEast() + bounds.getWest()) / 2 : 81.796
     layer.on({
       mouseover: (e) => {
         if (hoveredRef.current && hoveredRef.current !== e.target) {
@@ -214,18 +267,25 @@ function BoundaryLayers({ onHover, onWardZoom, reportsByArea, cityLimits }) {
     })
   }, [reportsByArea, onHover, onWardZoom])
 
-  if (!geojson) return null
+  // Skip ward fills at low zoom — big perf win
+  const showWards = zoom >= 13
 
   return (
     <>
-      {/* All GRMC ward fills — hover/click interactive */}
-      <GeoJSON
-        key="all-wards"
-        data={geojson}
-        style={wardStyle}
-        onEachFeature={onEachWard}
-      />
-      {/* City outer boundary — bold orange outline, no interaction */}
+      {/* Outside-city dim mask */}
+      {maskData && (
+        <GeoJSON key="city-mask" data={maskData} style={maskStyle} interactive={false} />
+      )}
+      {/* Ward fills — only render when zoomed in enough */}
+      {showWards && geojson && (
+        <GeoJSON
+          key={`wards-${zoom > 13 ? 'detail' : 'overview'}`}
+          data={geojson}
+          style={wardStyle}
+          onEachFeature={onEachWard}
+        />
+      )}
+      {/* City outer boundary */}
       {cityLimits && (
         <GeoJSON key="city-border" data={cityLimits} style={cityBorderStyle} interactive={false} />
       )}
@@ -233,7 +293,6 @@ function BoundaryLayers({ onHover, onWardZoom, reportsByArea, cityLimits }) {
   )
 }
 
-// ── MAIN MAP VIEW ──
 export default function MapView() {
   const { state, actions } = useApp()
   const [cityLimits, setCityLimits] = useState(null)
@@ -295,6 +354,7 @@ export default function MapView() {
           maxZoom={19}
           updateWhenZooming={false}
           updateWhenIdle={true}
+          keepBuffer={2}
         />
         <ZoomTracker onZoomChange={setCurrentZoom} />
         <FitToUrban cityLimits={cityLimits} />
@@ -303,12 +363,12 @@ export default function MapView() {
           onWardZoom={handleWardZoom}
           reportsByArea={reportsByArea}
           cityLimits={cityLimits}
+          zoom={currentZoom}
         />
         <ReportMarkers onReportPreview={handleReportPreview} />
         <MapControls />
       </MapContainer>
 
-      {/* Combined stats badge — NammaKasa style: one card, both numbers */}
       <div className="map-stats-pill">
         <span className="msp-active">{totalActive}</span>
         <span className="msp-sep">Active</span>
@@ -317,7 +377,6 @@ export default function MapView() {
         <span className="msp-sep">Reports</span>
       </div>
 
-      {/* Ward hover tooltip — name + zone label only */}
       {hoveredArea && (
         <div className="map-info-panel mip-light">
           <div className="mip-indicator" />
@@ -331,4 +390,4 @@ export default function MapView() {
       )}
     </div>
   )
-} 
+}
