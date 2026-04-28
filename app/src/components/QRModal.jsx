@@ -1,9 +1,7 @@
-import { useApp } from '../lib/store'
-
-const SITE_URL = 'https://godavari-matters.vercel.app'
+const appUrl = import.meta.env.VITE_APP_URL || window.location.origin
 
 export default function QRModal({ onClose }) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(SITE_URL)}&size=220x220&margin=12&format=svg`
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(appUrl)}&size=220x220&margin=12&format=svg`
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -29,7 +27,7 @@ export default function QRModal({ onClose }) {
             />
           </div>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 16, fontWeight: 600 }}>
-            godavari-matters.vercel.app
+            {appUrl.replace(/^https?:\/\//, '')}
           </p>
           <p style={{
             fontSize: 12, color: 'var(--text-muted)', marginTop: 12,
