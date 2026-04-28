@@ -4,7 +4,13 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,       // Store session in localStorage so it survives page reloads
+        autoRefreshToken: true,     // Automatically refresh the JWT before it expires (prevents 400 on delete)
+        detectSessionInUrl: false,  // We don't use OAuth redirects
+      }
+    })
   : null
 
 // ── SECURITY: Rate Limiter ──

@@ -49,14 +49,19 @@ async function adminDeleteReport(reportId, report) {
     return
   }
 
-  // 1. Delete image from storage if possible
-  if (report?.image_url) {
+  // 1. Delete images from storage if present
+  const urlsToDelete = [report?.image_url, report?.cleaned_image_url].filter(Boolean)
+  for (const url of urlsToDelete) {
     try {
-      if (report.image_url.includes('supabase.co')) {
-        // Delete from Supabase Storage
-        const fileName = report.image_url.split('/').pop()
-        if (fileName) {
-          await supabase.storage.from('pollution_snaps').remove([fileName])
+      if (url.includes('supabase.co')) {
+        // Extract the path after the bucket name in the storage URL
+        // URL format: .../storage/v1/object/public/<bucket>/<path>
+        const bucketMarker = '/pollution_snaps/'
+        const bucketIdx = url.indexOf(bucketMarker)
+        const filePath = bucketIdx !== -1 ? url.slice(bucketIdx + bucketMarker.length) : url.split('/').pop()
+        if (filePath) {
+          const { error: storageErr } = await supabase.storage.from('pollution_snaps').remove([filePath])
+          if (storageErr) console.warn('Storage delete warning:', storageErr.message)
         }
       }
     } catch (e) {
@@ -64,8 +69,29 @@ async function adminDeleteReport(reportId, report) {
     }
   }
 
-  // 2. Delete report record
-  await supabase.from('reports').delete().eq('id', reportId)
+  // 2. Delete the report record — request count so we can detect silent RLS blocks
+  const { error, count } = await supabase
+    .from('reports')
+    .delete({ count: 'exact' })
+    .eq('id', reportId)
+
+  if (error) {
+    console.error('Delete failed:', error)
+    alert(`Delete failed: ${error.message}\n\nCheck Supabase RLS policies for the reports table.`)
+    throw error
+  }
+
+  // RLS can silently block deletes — returns no error but 0 rows affected
+  if (count === 0) {
+    alert(
+      'Delete was blocked by Supabase RLS (Row Level Security).\n\n' +
+      'Fix: Go to Supabase → Table Editor → reports → Auth Policies\n' +
+      'Add a DELETE policy:\n' +
+      '  Target roles: authenticated\n' +
+      '  USING expression: true'
+    )
+    throw new Error('RLS blocked the delete')
+  }
 }
 
 // ── Login Screen ──
@@ -286,13 +312,26 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ total: 0, open: 0, pending: 0, resolved: 0 })
 
   useEffect(() => {
-    // Check existing session
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) { setUser(session.user); fetchReports() }
-      })
-    }
+    if (!supabase) return
+
+    // Check existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) { setUser(session.user); fetchReports() }
+    })
+
+    // Listen for auth state changes (token refresh, sign out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setUser(session?.user ?? null)
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setReports([])
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
+
 
   const fetchReports = async () => {
     setLoading(true)
@@ -419,7 +458,7 @@ export default function AdminPage() {
                 report={report}
                 onApprove={async (id) => { await adminApproveResolved(id); await fetchReports() }}
                 onReject={async (id) => { await adminRejectResolved(id); await fetchReports() }}
-                onDelete={async (r) => { await adminDeleteReport(r.id, r); await fetchReports() }}
+                onDelete={async (r) => { try { await adminDeleteReport(r.id, r); await fetchReports() } catch { /* error already alerted */ } }}
               />
             ))}
           </div>
